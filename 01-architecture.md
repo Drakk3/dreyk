@@ -15,7 +15,7 @@
 
 dreyk is split into two apps sharing one backend:
 
-- **PWA (`apps/web`)** — Next.js web app installable from the browser. Handles all UI, admin dashboard, live map, zone management, and module logic.
+- **PWA (`apps/web`)** — Next.js web app installable from the browser. Handles authenticated web workflows, admin routes, user routes, map operations, zone management, and module logic.
 - **Companion (`apps/companion`)** — Minimal Expo React Native app. Single responsibility: capture GPS in background and POST coordinates to the API. Also receives push notifications.
 - **Supabase** — Shared backend for both apps. Same project, same JWT, same database.
 
@@ -30,9 +30,9 @@ dreyk/
 ├── apps/
 │   ├── web/                        ← Next.js PWA → deploy: Vercel
 │   │   ├── app/                    ← Next.js App Router
-│   │   │   ├── (auth)/             ← login, splash
-│   │   │   ├── (admin)/            ← admin-only pages
-│   │   │   └── (user)/             ← general user pages
+│   │   │   ├── (auth)/             ← auth routes
+│   │   │   ├── (admin)/            ← admin-only routes
+│   │   │   └── (user)/             ← authenticated user routes
 │   │   ├── features/
 │   │   │   ├── geofencing/         ← Module 1 (active)
 │   │   │   │   ├── components/
@@ -41,10 +41,10 @@ dreyk/
 │   │   │   │   └── types.ts
 │   │   │   └── [future-module]/    ← pattern to replicate
 │   │   ├── shared/
-│   │   │   ├── components/         ← TheGridCN end-to-end; custom only with explicit user approval
+│   │   │   ├── components/         ← shared web components
 │   │   │   ├── hooks/              ← useAuth, usePermissions, useGroups
 │   │   │   └── types/              ← re-exports from packages/shared
-│   │   └── config/                 ← env, constants, gridcn theme config
+│   │   └── config/                 ← env and constants
 │   │
 │   └── companion/                  ← Expo React Native → deploy: EAS
 │       ├── app/
@@ -78,25 +78,16 @@ dreyk/
 
 ## Tech stack
 
-### PWA — `apps/web`
+### Web app — `apps/web`
 
 | Layer | Tool | Role |
 |---|---|---|
 | Framework | Next.js 14 (App Router) | pages, routing, SSR |
-| UI system | TheGridCN | mandatory end-to-end frontend design system for the PWA |
-| UI dependency | shadcn/ui | underlying registry/primitives only when required by TheGridCN; not a parallel design path |
 | Map | mapcn (MapLibre) | zone map, live user markers |
 | Styling | Tailwind CSS | utility-first styling |
 | State | Zustand | global state per feature slice |
 | Server/cache | React Query (TanStack) | data fetching, cache, sync |
 | Language | TypeScript strict | |
-
-Frontend rule clarification:
-
-- `apps/web` must use **TheGridCN end-to-end** as its visual/component system.
-- Do not mix a second frontend design language on top of TheGridCN.
-- If a needed component does not exist in TheGridCN or its compatible shadcn layer, stop and ask the user explicitly before creating anything from scratch.
-- That request must explain the gap, why existing TheGridCN options are insufficient, and the maintenance/consistency implications of adding a custom component.
 
 ### Companion — `apps/companion`
 

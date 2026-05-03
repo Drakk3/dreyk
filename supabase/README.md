@@ -5,7 +5,7 @@ Phase 1 is backend-only. This directory owns Supabase config, SQL migrations, se
 ## Layout
 
 - `config.toml` — local Supabase CLI config with seed enabled.
-- `migrations/0000` → `0010` — ordered schema, canonical theme migration, indexes, and RLS.
+- `migrations/0000` → `0010` — ordered schema, compatibility migration, indexes, and RLS.
 - `seed.sql` — canonical module bootstrap data.
 
 ## Migration order
@@ -72,7 +72,7 @@ Phase 1 is not complete until this checklist is executed against real JWTs from 
 ### Seed and schema
 
 - [ ] All 8 tables exist in `public`.
-- [ ] `profiles.theme_preference` only accepts `ares`, `tron`, `clu`, `athena`, `aphrodite`, `poseidon`.
+- [ ] `profiles.theme_preference` respects its database constraint.
 - [ ] The six secondary indexes from `0009_indexes.sql` exist.
 - [ ] `public.modules` contains `('geofencing', 'Geofencing', true)`.
 
@@ -101,5 +101,5 @@ Use one admin JWT and one non-admin authenticated JWT.
 
 ## Notes
 
-- `0008_gridcn_theme_preference.sql` intentionally normalizes invalid stored values to `ares` before enforcing the canonical theme constraint.
+- `0008_gridcn_theme_preference.sql` intentionally normalizes invalid stored values before enforcing the column constraint.
 - `0010_rls.sql` uses helper SQL functions so policies can check admin/group access without recursive RLS failures.
