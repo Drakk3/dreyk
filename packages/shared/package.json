@@ -1,0 +1,36 @@
+{
+  "name": "@dreyk/shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./types/database": {
+      "types": "./src/types/database.ts",
+      "default": "./src/types/database.ts"
+    },
+    "./types/domain": {
+      "types": "./src/types/domain.ts",
+      "default": "./src/types/domain.ts"
+    },
+    "./supabase/createClient": {
+      "types": "./src/supabase/createClient.ts",
+      "default": "./src/supabase/createClient.ts"
+    },
+    "./supabase/browserClient": {
+      "types": "./src/supabase/browserClient.ts",
+      "default": "./src/supabase/browserClient.ts"
+    },
+    "./utils/haversine": {
+      "types": "./src/utils/haversine.ts",
+      "default": "./src/utils/haversine.ts"
+    }
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.8"
+  },
+  "scripts": {
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "tsc -p tsconfig.json --pretty false",
+    "build": "node --eval \"process.stdout.write('packages/shared build is intentionally deferred beyond Phase 0\\n')\""
+  }
+}

@@ -1,0 +1,13 @@
+node_modules/
+.turbo/
+dist/
+.next/
+coverage/
+.DS_Store
+*.tsbuildinfo
+
+# Phase 0 only: app runtime artifacts land here later.
+apps/web/.next/
+apps/companion/.expo/
+supabase/.temp/
+supabase/.branches/

@@ -1,0 +1,11 @@
+{
+  "name": "@dreyk/web",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "node --eval \"process.stdout.write('apps/web Phase 0 shell only\\n')\"",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "tsc -p tsconfig.json --pretty false",
+    "build": "node --eval \"process.stdout.write('apps/web build is intentionally deferred beyond Phase 0\\n')\""
+  }
+}
