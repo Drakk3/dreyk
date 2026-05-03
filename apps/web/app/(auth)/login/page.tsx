@@ -6,6 +6,7 @@ import type { FormEvent } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Checkbox } from '@/components/ui/Checkbox';
+import { DataCard } from '@/components/ui/DataCard';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { useAuthSignIn } from '@/shared/hooks/useAuthSignIn';
@@ -52,33 +53,33 @@ export default function LoginPage(): JSX.Element {
           </div>
 
           <div className="grid gap-4 md:grid-cols-3">
-            <Card className="gap-4 bg-background/70 py-5">
-              <CardHeader className="gap-3 px-5">
-                <Network className="size-5 text-primary" />
-                <CardTitle className="text-sm tracking-[0.14em] uppercase">Route Groups</CardTitle>
-              </CardHeader>
-              <CardContent className="px-5 text-sm text-muted-foreground">
-                Auth, admin, and user paths resolve through server-first guards.
-              </CardContent>
-            </Card>
-            <Card className="gap-4 bg-background/70 py-5">
-              <CardHeader className="gap-3 px-5">
-                <Shield className="size-5 text-primary" />
-                <CardTitle className="text-sm tracking-[0.14em] uppercase">Role Gate</CardTitle>
-              </CardHeader>
-              <CardContent className="px-5 text-sm text-muted-foreground">
-                Admin traffic is isolated before any dashboard or map surface exists.
-              </CardContent>
-            </Card>
-            <Card className="gap-4 bg-background/70 py-5">
-              <CardHeader className="gap-3 px-5">
-                <Activity className="size-5 text-primary" />
-                <CardTitle className="text-sm tracking-[0.14em] uppercase">Scope Lock</CardTitle>
-              </CardHeader>
-              <CardContent className="px-5 text-sm text-muted-foreground">
-                No social login, no product widgets, no Phase 4 profile work.
-              </CardContent>
-            </Card>
+            <DataCard
+              fields={[
+                { label: 'PATHS', value: 'AUTH / ADMIN / USER', highlight: true },
+                { label: 'ROUTING', value: 'SERVER-FIRST GUARDS' },
+              ]}
+              status="active"
+              subtitle="ACCESS"
+              title="Route Groups"
+            />
+            <DataCard
+              fields={[
+                { label: 'ADMIN', value: 'ISOLATED ENTRY' },
+                { label: 'SURFACES', value: 'LOCKED UNTIL PHASE 4' },
+              ]}
+              status="active"
+              subtitle="CONTROL"
+              title="Role Gate"
+            />
+            <DataCard
+              fields={[
+                { label: 'SOCIAL', value: 'DISABLED' },
+                { label: 'PRODUCT', value: 'NOT YET EXPOSED', highlight: true },
+              ]}
+              status="inactive"
+              subtitle="BOUNDARY"
+              title="Scope Lock"
+            />
           </div>
         </section>
 
