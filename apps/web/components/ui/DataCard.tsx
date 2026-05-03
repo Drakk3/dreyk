@@ -38,16 +38,17 @@ interface DataCardField {
 interface DataCardProps extends React.HTMLAttributes<HTMLDivElement> {
   title?: string;
   subtitle?: string;
-  fields: DataCardField[];
+  fields?: DataCardField[];
   status?: 'active' | 'inactive' | 'alert';
 }
 
 export function DataCard({
   title,
   subtitle,
-  fields,
+  fields = [],
   status = 'active',
   className,
+  children,
   ...props
 }: DataCardProps): JSX.Element {
   const statusColors = {
@@ -83,18 +84,22 @@ export function DataCard({
         </div>
       ) : null}
 
-      <div className="space-y-3 p-4">
-        {fields.map((field, index) => {
-          return (
-            <DataField
-              key={`${field.label}-${index}`}
-              highlight={field.highlight}
-              label={field.label}
-              value={field.value}
-            />
-          );
-        })}
-      </div>
+      {fields.length > 0 ? (
+        <div className="space-y-3 p-4">
+          {fields.map((field, index) => {
+            return (
+              <DataField
+                key={`${field.label}-${index}`}
+                highlight={field.highlight}
+                label={field.label}
+                value={field.value}
+              />
+            );
+          })}
+        </div>
+      ) : null}
+
+      {children !== undefined ? children : null}
 
       <div className="pointer-events-none absolute top-0 left-0 h-4 w-4 border-t-2 border-l-2 border-primary/50" />
       <div className="pointer-events-none absolute top-0 right-0 h-4 w-4 border-t-2 border-r-2 border-primary/50" />
