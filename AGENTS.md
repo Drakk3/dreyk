@@ -136,5 +136,6 @@ Skills available to AI agents in this project:
 |----------|----------------|
 | [01-architecture.md](01-architecture.md) | Monorepo structure, tech stack, dependency rules, auth flow, GPS pipeline |
 | [02-data-model.md](02-data-model.md) | SQL tables, indexes, RLS policies, TypeScript types |
+| [03-frontend-ui-manual.md](03-frontend-ui-manual.md) | Manual workflow for user-directed UI/UX and component integration |
 | [04-code-conventions.md](04-code-conventions.md) | Naming, TypeScript rules, hook/service/store patterns, error handling |
 | [05-development-phases.md](05-development-phases.md) | Phase 0–14 with exit criteria and critical dependency order |
