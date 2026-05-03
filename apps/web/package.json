@@ -3,9 +3,27 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "dev": "node --eval \"process.stdout.write('apps/web Phase 0 shell only\\n')\"",
-    "lint": "eslint . --max-warnings=0",
-    "typecheck": "tsc -p tsconfig.json --pretty false",
-    "build": "node --eval \"process.stdout.write('apps/web build is intentionally deferred beyond Phase 0\\n')\""
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc -p tsconfig.json --noEmit --pretty false"
+  },
+  "dependencies": {
+    "@dreyk/shared": "*",
+    "@supabase/ssr": "^0.10.2",
+    "clsx": "^2.1.1",
+    "next": "^14.2.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "tailwind-merge": "^3.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "autoprefixer": "^10.4.0",
+    "postcss": "^8.4.0",
+    "tailwindcss": "^3.4.0"
   }
 }

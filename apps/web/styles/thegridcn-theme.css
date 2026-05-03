@@ -1,0 +1,24 @@
+/*
+ * STUB — reemplazar ejecutando: npx shadcn@latest add @thegridcn/theme-ares
+ *
+ * Este archivo será sobreescrito por los tokens de color y variables
+ * del tema ARES de TheGridCN.
+ *
+ * Comando completo para instalar todos los temas (Phase 3-4):
+ *   npx shadcn@latest add @thegridcn/theme-ares
+ *   npx shadcn@latest add @thegridcn/theme-tron
+ *   npx shadcn@latest add @thegridcn/theme-clu
+ *   npx shadcn@latest add @thegridcn/theme-athena
+ *   npx shadcn@latest add @thegridcn/theme-aphrodite
+ *   npx shadcn@latest add @thegridcn/theme-poseidon
+ */
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 0 0% 3.9%;
+}
+
+.dark {
+  --background: 0 0% 3.9%;
+  --foreground: 0 0% 98%;
+}
