@@ -40,6 +40,7 @@ interface DataCardProps extends React.HTMLAttributes<HTMLDivElement> {
   subtitle?: string;
   fields?: DataCardField[];
   status?: 'active' | 'inactive' | 'alert';
+  headerRight?: React.ReactNode;
 }
 
 export function DataCard({
@@ -47,6 +48,7 @@ export function DataCard({
   subtitle,
   fields = [],
   status = 'active',
+  headerRight,
   className,
   children,
   ...props
@@ -70,32 +72,37 @@ export function DataCard({
     >
       <div className="pointer-events-none absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(0,0,0,0.03)_2px,rgba(0,0,0,0.03)_4px)]" />
 
-      {(title !== undefined || subtitle !== undefined) ? (
-        <div className="border-b border-border/50 px-4 py-2">
-          {subtitle !== undefined ? (
-            <div className="text-[10px] tracking-widest text-foreground/80 uppercase">{subtitle}</div>
-          ) : null}
-          {title !== undefined ? (
-            <div className="flex items-center gap-2">
-              <span className="text-primary">|</span>
-              <h3 className="text-lg font-bold tracking-wider uppercase">{title}</h3>
-            </div>
-          ) : null}
+      {title !== undefined || subtitle !== undefined ? (
+        <div className="flex items-center justify-between gap-4 border-b border-border/50 px-4 py-2">
+          <div className="min-w-0">
+            {subtitle !== undefined ? (
+              <div className="text-[10px] tracking-widest text-foreground/60 uppercase">
+                {subtitle}
+              </div>
+            ) : null}
+            {title !== undefined ? (
+              <div className="flex items-center gap-2">
+                <span className="text-primary">|</span>
+                <h3 className="text-sm font-bold tracking-widest uppercase truncate">{title}</h3>
+              </div>
+            ) : null}
+          </div>
+          {headerRight !== undefined ? headerRight : null}
         </div>
       ) : null}
 
       {fields.length > 0 ? (
         <div className="space-y-3 p-4">
-        {fields.map((field, index) => {
-          return (
-            <DataField
-              key={`${field.label}-${index}`}
-              label={field.label}
-              value={field.value}
-              {...(field.highlight !== undefined ? { highlight: field.highlight } : {})}
-            />
-          );
-        })}
+          {fields.map((field, index) => {
+            return (
+              <DataField
+                key={`${field.label}-${index}`}
+                label={field.label}
+                value={field.value}
+                {...(field.highlight !== undefined ? { highlight: field.highlight } : {})}
+              />
+            );
+          })}
         </div>
       ) : null}
 
