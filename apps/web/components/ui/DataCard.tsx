@@ -86,16 +86,16 @@ export function DataCard({
 
       {fields.length > 0 ? (
         <div className="space-y-3 p-4">
-          {fields.map((field, index) => {
-            return (
-              <DataField
-                key={`${field.label}-${index}`}
-                highlight={field.highlight}
-                label={field.label}
-                value={field.value}
-              />
-            );
-          })}
+        {fields.map((field, index) => {
+          return (
+            <DataField
+              key={`${field.label}-${index}`}
+              label={field.label}
+              value={field.value}
+              {...(field.highlight !== undefined ? { highlight: field.highlight } : {})}
+            />
+          );
+        })}
         </div>
       ) : null}
 
