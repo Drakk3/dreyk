@@ -55,7 +55,7 @@ Pre-digested rules per skill. Delegators copy matching blocks into sub-agent pro
 | AGENTS.md | /home/dreykdev/Desktop/dreyk/AGENTS.md | Index of repo rules and doc references |
 | 01-architecture.md | /home/dreykdev/Desktop/dreyk/01-architecture.md | Target monorepo architecture, stack, dependency rules |
 | 02-data-model.md | /home/dreykdev/Desktop/dreyk/02-data-model.md | SQL schema, RLS, TS types |
-| 03-design-system.md | /home/dreykdev/Desktop/dreyk/03-design-system.md | GridCN / PWA design contract |
+| 03-frontend-ui-manual.md | /home/dreykdev/Desktop/dreyk/03-frontend-ui-manual.md | Manual workflow for user-directed UI/UX and component integration |
 | 04-code-conventions.md | /home/dreykdev/Desktop/dreyk/04-code-conventions.md | TS, hooks, services, store, component rules |
 | 05-development-phases.md | /home/dreykdev/Desktop/dreyk/05-development-phases.md | Phase plan and exit criteria |
 

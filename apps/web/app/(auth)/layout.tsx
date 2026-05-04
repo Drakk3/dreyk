@@ -1,11 +1,19 @@
+import type { ReactNode } from 'react';
+
+import { redirectAuthenticatedUser } from '@/lib/auth/authContext';
+import { handleError } from '@/shared/lib/errors';
+
 interface AuthLayoutProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
-export default function AuthLayout({ children }: AuthLayoutProps) {
-  return (
-    <main className="min-h-screen flex items-center justify-center">
-      {children}
-    </main>
-  );
+export default async function AuthLayout({ children }: AuthLayoutProps): Promise<JSX.Element> {
+  try {
+    await redirectAuthenticatedUser();
+  } catch (error: unknown) {
+    handleError(error, 'AuthLayout');
+    throw error;
+  }
+
+  return <>{children}</>;
 }

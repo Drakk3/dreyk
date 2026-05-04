@@ -1,11 +1,19 @@
+import type { ReactNode } from 'react';
+
+import { requireStandardUser } from '@/lib/auth/authContext';
+import { handleError } from '@/shared/lib/errors';
+
 interface UserLayoutProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
-export default function UserLayout({ children }: UserLayoutProps) {
-  return (
-    <div className="min-h-screen">
-      <main>{children}</main>
-    </div>
-  );
+export default async function UserLayout({ children }: UserLayoutProps): Promise<JSX.Element> {
+  try {
+    await requireStandardUser();
+  } catch (error: unknown) {
+    handleError(error, 'UserLayout');
+    throw error;
+  }
+
+  return <>{children}</>;
 }

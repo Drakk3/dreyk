@@ -1,47 +1,11 @@
-import { type NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
-import type { Database } from "@dreyk/shared/types/database";
+import type { NextRequest } from 'next/server';
 
-export async function middleware(request: NextRequest): Promise<NextResponse> {
-  let supabaseResponse = NextResponse.next({ request });
+import { updateSession } from '@/lib/supabase/middleware';
 
-  const supabase = createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          supabaseResponse = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const { pathname } = request.nextUrl;
-  const isAuthRoute = pathname.startsWith("/login");
-
-  if (user === null && !isAuthRoute) {
-    return NextResponse.redirect(new URL("/login", request.url));
-  }
-
-  if (user !== null && isAuthRoute) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
-  }
-
-  return supabaseResponse;
+export async function middleware(request: NextRequest): Promise<Response> {
+  return updateSession(request);
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
 };

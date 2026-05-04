@@ -1,21 +1,26 @@
-import type { Metadata } from "next";
-import { ThemeProvider } from "@/components/theme";
-import "./globals.css";
+import type { ReactNode } from 'react';
 
-export const metadata: Metadata = {
-  title: "dreyk",
-  description: "Location-based group coordination",
-};
+import './globals.css';
+
+import { ThemeProvider } from '@/components/Theme';
 
 interface RootLayoutProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
-export default function RootLayout({ children }: RootLayoutProps) {
+export default function RootLayout({ children }: RootLayoutProps): JSX.Element {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body>
-        <ThemeProvider defaultTheme="ares">{children}</ThemeProvider>
+      <body className="min-h-screen bg-background text-foreground antialiased">
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="ares"
+          disableTransitionOnChange
+          enableSystem={false}
+          themes={['ares']}
+        >
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

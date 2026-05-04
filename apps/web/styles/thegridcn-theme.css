@@ -1,24 +1,228 @@
-/*
- * STUB — reemplazar ejecutando: npx shadcn@latest add @thegridcn/theme-ares
- *
- * Este archivo será sobreescrito por los tokens de color y variables
- * del tema ARES de TheGridCN.
- *
- * Comando completo para instalar todos los temas (Phase 3-4):
- *   npx shadcn@latest add @thegridcn/theme-ares
- *   npx shadcn@latest add @thegridcn/theme-tron
- *   npx shadcn@latest add @thegridcn/theme-clu
- *   npx shadcn@latest add @thegridcn/theme-athena
- *   npx shadcn@latest add @thegridcn/theme-aphrodite
- *   npx shadcn@latest add @thegridcn/theme-poseidon
- */
+/* ============================================
+   THE GRIDCN - BASE STYLES
+   Core styles required for all themes
+   ============================================ */
 
+/* Panel background */
 :root {
-  --background: 0 0% 100%;
-  --foreground: 0 0% 3.9%;
+  --panel: #0c1421;
 }
 
-.dark {
-  --background: 0 0% 3.9%;
-  --foreground: 0 0% 98%;
+/* Core Tron dark backgrounds - deep black with slight blue tint */
+:root {
+  --background: oklch(0.06 0.02 250);
+  --foreground: oklch(0.95 0.02 220);
+
+  /* Cards & Popovers - Dark with subtle blue tint */
+  --card: oklch(0.1 0.02 250);
+  --card-foreground: oklch(0.92 0.02 220);
+  --popover: oklch(0.1 0.02 250);
+  --popover-foreground: oklch(0.92 0.02 220);
+
+  /* Destructive */
+  --destructive: oklch(0.55 0.25 30);
+
+  /* Sidebar base */
+  --sidebar: oklch(0.08 0.02 250);
+  --sidebar-foreground: oklch(0.92 0.02 220);
+
+  /* Border radius */
+  --radius: 0.5rem;
+}
+
+/* Base styles */
+* {
+  border-color: var(--border);
+  outline-color: color-mix(in oklch, var(--ring) 50%, transparent);
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Heading styles */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* ============================================
+   THEME: ARES (God of War) - RED
+   Default theme - Main movie theme
+   White/bluish text with red/orange accents
+   ============================================ */
+:root {
+  /* Ares Red - Primary accent color */
+  --primary: oklch(0.6 0.25 25);
+  --primary-foreground: oklch(0.98 0 0);
+
+  /* Secondary - Orange/amber for contrast */
+  --secondary: oklch(0.65 0.18 55);
+  --secondary-foreground: oklch(0.1 0 0);
+
+  /* Muted - Bluish gray for labels */
+  --muted: oklch(0.15 0.02 250);
+  --muted-foreground: oklch(0.6 0.04 220);
+
+  /* Accent - Bright orange */
+  --accent: oklch(0.7 0.2 50);
+  --accent-foreground: oklch(0.1 0 0);
+
+  /* Borders with red/orange glow */
+  --border: oklch(0.3 0.12 25);
+  --input: oklch(0.15 0.04 250);
+  --ring: oklch(0.6 0.25 25);
+
+  /* Glow effects - Red */
+  --glow: oklch(0.6 0.25 25);
+  --glow-muted: oklch(0.4 0.15 25);
+
+  /* Chart colors - Mix of red/orange tones */
+  --chart-1: oklch(0.6 0.25 25);
+  --chart-2: oklch(0.7 0.2 50);
+  --chart-3: oklch(0.55 0.22 35);
+  --chart-4: oklch(0.65 0.18 40);
+  --chart-5: oklch(0.75 0.15 60);
+
+  /* Sidebar */
+  --sidebar-primary: oklch(0.6 0.25 25);
+  --sidebar-primary-foreground: oklch(0.98 0 0);
+  --sidebar-accent: oklch(0.7 0.2 50);
+  --sidebar-accent-foreground: oklch(0.1 0 0);
+  --sidebar-border: oklch(0.3 0.12 25);
+  --sidebar-ring: oklch(0.6 0.25 25);
+}
+
+/* ============================================================
+   OPS DASHBOARD — additive utilities
+   Append-only · do not remove or edit existing rules above
+   ============================================================ */
+
+/* Border helper — class-only, no universal selector */
+.border-thin {
+  border-width: 0.5px;
+  border-style: solid;
+}
+
+/* Glow scale */
+.glow-sm {
+  box-shadow: 0 0 12px -2px color-mix(in oklch, var(--primary) 50%, transparent);
+}
+.glow {
+  box-shadow: 0 0 24px -4px color-mix(in oklch, var(--primary) 50%, transparent);
+}
+.glow-lg {
+  box-shadow:
+    0 0 56px -10px color-mix(in oklch, var(--primary) 60%, transparent),
+    0 0 16px -4px color-mix(in oklch, var(--primary) 40%, transparent);
+}
+.glow-destructive {
+  box-shadow: 0 0 22px -4px color-mix(in oklch, var(--destructive) 55%, transparent);
+}
+.glow-pulse {
+  animation: glow-pulse 2.6s ease-in-out infinite;
+}
+.glow-border:hover {
+  box-shadow: 0 0 28px -6px color-mix(in oklch, var(--primary) 55%, transparent);
+  border-color: color-mix(in oklch, var(--primary) 60%, transparent);
+}
+
+/* Scanlines overlay */
+.scanlines {
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.18) 2px,
+    rgba(0, 0, 0, 0.18) 4px
+  );
+  pointer-events: none;
+}
+
+/* Circuit background (page-wide fixed overlay) */
+.circuit-bg {
+  background-image:
+    linear-gradient(color-mix(in oklch, var(--primary) 4%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in oklch, var(--primary) 4%, transparent) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+/* Map / coordinate grid */
+.map-grid {
+  background-color: var(--panel);
+  background-image:
+    linear-gradient(color-mix(in oklch, var(--primary) 12%, transparent) 1px, transparent 1px),
+    linear-gradient(
+      90deg,
+      color-mix(in oklch, var(--primary) 12%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 32px 32px;
+}
+
+/* Animations */
+@keyframes glow-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 12px -2px color-mix(in oklch, var(--primary) 35%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 32px -2px color-mix(in oklch, var(--primary) 70%, transparent);
+  }
+}
+@keyframes data-flow {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+@keyframes pulse-trace {
+  0% {
+    stroke-dashoffset: 240;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes scan-sweep {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(2000%);
+  }
+}
+@keyframes blink {
+  0%,
+  60% {
+    opacity: 1;
+  }
+  70%,
+  100% {
+    opacity: 0.2;
+  }
+}
+
+.ticker-flow {
+  animation: data-flow 60s linear infinite;
+}
+.pulse-trace {
+  stroke-dasharray: 240;
+  animation: pulse-trace 4s linear infinite;
+}
+.scan-sweep {
+  animation: scan-sweep 6s linear infinite;
+}
+.blink {
+  animation: blink 1.4s ease-in-out infinite;
 }

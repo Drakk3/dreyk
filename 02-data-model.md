@@ -117,7 +117,7 @@ insert into public.modules (key, name, is_enabled)
 values ('geofencing', 'Geofencing', true);
 ```
 
-Forward migration `supabase/migrations/0008_gridcn_theme_preference.sql` normalizes any persisted `profiles.theme_preference` value outside the canonical set to `ares` before reapplying the canonical constraint.
+Forward migration `supabase/migrations/0008_gridcn_theme_preference.sql` normalizes invalid stored `profiles.theme_preference` values before reapplying the column constraint.
 
 ---
 

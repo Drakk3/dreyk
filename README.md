@@ -12,7 +12,7 @@ Phase 0 scaffolding only.
 
 - Backend integration, Supabase project setup, migrations, RLS, auth, or functions
 - Shared domain contracts, Supabase clients, or business utilities
-- Frontend/product work, TheGridCN implementation, routes, screens, or features
+- Application-layer implementation details, routes, screens, or feature delivery
 - Any feature folders, business logic, or app-to-app imports
 
 ## Verification policy

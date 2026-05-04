@@ -1,14 +1,19 @@
-// Phase 4 — Sidebar + NavigationMenu de TheGridCN
-// Instalar: npx shadcn@latest add @thegridcn/sidebar @thegridcn/navigation-menu
+import type { ReactNode } from 'react';
+
+import { requireAdminUser } from '@/lib/auth/authContext';
+import { handleError } from '@/shared/lib/errors';
 
 interface AdminLayoutProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
-export default function AdminLayout({ children }: AdminLayoutProps) {
-  return (
-    <div className="flex min-h-screen">
-      <main className="flex-1">{children}</main>
-    </div>
-  );
+export default async function AdminLayout({ children }: AdminLayoutProps): Promise<JSX.Element> {
+  try {
+    await requireAdminUser();
+  } catch (error: unknown) {
+    handleError(error, 'AdminLayout');
+    throw error;
+  }
+
+  return <>{children}</>;
 }
