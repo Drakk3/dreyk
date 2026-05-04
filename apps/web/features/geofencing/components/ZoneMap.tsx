@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { Button } from '@/components/ui/Button';
 import { Brackets } from '@/shared/components/primitives/Brackets';
-import type { DashboardZone, DashboardUserPin, DashboardProfile } from '@/shared/types/dashboard';
+import type { DashboardZone, DashboardUserPin, DashboardProfile } from '@/features/geofencing/types';
 
 interface ZoneMapProps {
   zones: DashboardZone[];

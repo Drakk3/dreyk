@@ -4,20 +4,21 @@ import * as React from 'react';
 import type { Profile } from '@dreyk/shared/types/domain';
 import type { Role } from '@dreyk/shared/types/database';
 
-import { Sidebar } from './Sidebar';
-import { Topbar } from './Topbar';
+import { Sidebar } from '@/shared/components/shell/Sidebar';
+import { Topbar } from '@/shared/components/shell/Topbar';
+import { PRIMARY_NAV } from '@/config/navigation';
 import { CommandMenu } from '@/components/ui/CommandMenu';
 import { Button } from '@/components/ui/Button';
 import { DataCard } from '@/components/ui/DataCard';
-import { KpiStrip } from '@/shared/components/dashboard-pieces/KpiStrip';
-import { ZoneMap } from '@/shared/components/dashboard-pieces/ZoneMap';
-import { ZoneRoster } from '@/shared/components/dashboard-pieces/ZoneRoster';
-import { ActivityChart } from '@/shared/components/dashboard-pieces/ActivityChart';
-import { MembersPanel } from '@/shared/components/dashboard-pieces/MembersPanel';
-import { ModuleStatus } from '@/shared/components/dashboard-pieces/ModuleStatus';
-import { EventsTable } from '@/shared/components/dashboard-pieces/EventsTable';
-import { NetworkStatusCard } from '@/shared/components/dashboard-pieces/NetworkStatusCard';
-import { EventTicker } from '@/shared/components/dashboard-pieces/EventTicker';
+import { KpiStrip } from './KpiStrip';
+import { ZoneMap } from './ZoneMap';
+import { ZoneRoster } from './ZoneRoster';
+import { ActivityChart } from './ActivityChart';
+import { MembersPanel } from './MembersPanel';
+import { ModuleStatus } from './ModuleStatus';
+import { EventsTable } from './EventsTable';
+import { NetworkStatusCard } from './NetworkStatusCard';
+import { EventTicker } from './EventTicker';
 import { useAuthSignOut } from '@/shared/hooks/useAuthSignOut';
 
 import {
@@ -25,7 +26,7 @@ import {
   MOCK_USER_PINS,
   MOCK_PROFILES,
   MOCK_EVENTS,
-} from '@/shared/data/dashboardMockData';
+} from '../data/mockData';
 
 interface OpsDashboardProps {
   profile: Profile;
@@ -98,6 +99,7 @@ export function OpsDashboard({ profile, role }: OpsDashboardProps): JSX.Element 
       />
 
       <Sidebar
+        navItems={PRIMARY_NAV}
         active={activeNav}
         onNav={setActiveNav}
         displayName={profile.display_name}

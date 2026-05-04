@@ -2,22 +2,10 @@
 
 import * as React from 'react';
 import { useAuthSignOut } from '@/shared/hooks/useAuthSignOut';
-
-const NAV_PRIMARY = [
-  { key: 'ops', label: 'OPERATIONS', icon: '◊' },
-  { key: 'zones', label: 'ZONES', icon: '▢' },
-  { key: 'members', label: 'MEMBERS', icon: '◉' },
-  { key: 'events', label: 'EVENTS', icon: '≣' },
-  { key: 'alexa', label: 'ALEXA', icon: '▲' },
-  { key: 'modules', label: 'MODULES', icon: '▣' },
-];
-
-const NAV_SYSTEM = [
-  { key: 'settings', label: 'SETTINGS', icon: '✦' },
-  { key: 'logs', label: 'AUDIT LOG', icon: '≡' },
-];
+import { SYSTEM_NAV, type NavItem } from '@/config/navigation';
 
 interface SidebarProps {
+  navItems: NavItem[];
   active: string;
   onNav: (key: string) => void;
   displayName: string;
@@ -25,7 +13,7 @@ interface SidebarProps {
   initials: string;
 }
 
-export function Sidebar({ active, onNav, displayName, role, initials }: SidebarProps): JSX.Element {
+export function Sidebar({ navItems, active, onNav, displayName, role, initials }: SidebarProps): JSX.Element {
   const { handleSignOut, isSigningOut } = useAuthSignOut();
 
   return (
@@ -49,7 +37,7 @@ export function Sidebar({ active, onNav, displayName, role, initials }: SidebarP
         <div className="px-4 pb-1.5 font-mono text-[9px] tracking-widest text-foreground/30 uppercase">
           PRIMARY
         </div>
-        {NAV_PRIMARY.map((n) => (
+        {navItems.map((n) => (
           <button
             key={n.key}
             type="button"
@@ -72,9 +60,9 @@ export function Sidebar({ active, onNav, displayName, role, initials }: SidebarP
               {n.icon}
             </span>
             <span className="truncate">{n.label}</span>
-            {n.key === 'events' && (
+            {n.badge !== undefined && (
               <span className="font-mono text-[9px] px-1.5 rounded border-thin border-destructive/50 bg-destructive/20 text-foreground">
-                3
+                {n.badge}
               </span>
             )}
           </button>
@@ -83,7 +71,7 @@ export function Sidebar({ active, onNav, displayName, role, initials }: SidebarP
         <div className="mt-4 px-4 pb-1.5 font-mono text-[9px] tracking-widest text-foreground/30 uppercase">
           SYSTEM
         </div>
-        {NAV_SYSTEM.map((n) => (
+        {SYSTEM_NAV.map((n) => (
           <button
             key={n.key}
             type="button"

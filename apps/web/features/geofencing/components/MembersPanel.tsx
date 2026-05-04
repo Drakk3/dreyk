@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { DataCard } from '@/components/ui/DataCard';
-import type { DashboardProfile, DashboardUserPin, DashboardZone } from '@/shared/types/dashboard';
+import type { DashboardProfile, DashboardUserPin, DashboardZone } from '@/features/geofencing/types';
 
 interface MembersPanelProps {
   profiles: DashboardProfile[];

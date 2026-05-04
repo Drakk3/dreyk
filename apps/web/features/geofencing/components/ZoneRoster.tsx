@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { DataCard } from '@/components/ui/DataCard';
 import { Button } from '@/components/ui/Button';
-import type { DashboardZone } from '@/shared/types/dashboard';
+import type { DashboardZone } from '@/features/geofencing/types';
 
 interface ZoneRosterProps {
   zones: DashboardZone[];

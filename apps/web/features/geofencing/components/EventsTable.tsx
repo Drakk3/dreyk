@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { DataCard } from '@/components/ui/DataCard';
-import type { DashboardEvent } from '@/shared/types/dashboard';
+import type { DashboardEvent } from '@/features/geofencing/types';
 
 type Filter = 'ALL' | 'ENTER' | 'EXIT';
 

@@ -1,6 +1,6 @@
 import { requireStandardUser, type AuthUserContext } from '@/lib/auth/authContext';
 import { handleError } from '@/shared/lib/errors';
-import { OpsDashboard } from '@/shared/components/dashboard-shell/OpsDashboard';
+import { OpsDashboard } from '@/features/geofencing/components/OpsDashboard';
 
 export default async function UserLandingPage(): Promise<JSX.Element> {
   let authUserContext: AuthUserContext;
