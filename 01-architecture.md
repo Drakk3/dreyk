@@ -1,7 +1,7 @@
 # dreyk — Architecture
 
-> **Document version:** 1.1
-> **Status:** Updated — pre-code
+> **Document version:** 1.2
+> **Status:** Phase 3 active — feature-first architecture applied
 >
 > ### Update policy
 > This document may be updated once the codebase is running.
@@ -34,17 +34,29 @@ dreyk/
 │   │   │   ├── (admin)/            ← admin-only routes
 │   │   │   └── (user)/             ← authenticated user routes
 │   │   ├── features/
-│   │   │   ├── geofencing/         ← Module 1 (active)
-│   │   │   │   ├── components/
-│   │   │   │   ├── hooks/
-│   │   │   │   ├── services/
-│   │   │   │   └── types.ts
-│   │   │   └── [future-module]/    ← pattern to replicate
+│   │   │   ├── geofencing/         ← Module 1 (active — Phase 3+)
+│   │   │   │   ├── components/     ← OpsDashboard, ZoneMap, ZoneRoster,
+│   │   │   │   │                      KpiStrip, EventsTable, MembersPanel,
+│   │   │   │   │                      ActivityChart, ModuleStatus, EventTicker,
+│   │   │   │   │                      NetworkStatusCard, KpiCard
+│   │   │   │   ├── config/
+│   │   │   │   │   └── nav.ts      ← nav items del feature (key, label, icon, badge)
+│   │   │   │   ├── data/
+│   │   │   │   │   └── mockData.ts ← mock data hasta que Realtime esté activo
+│   │   │   │   ├── hooks/          ← (vacío — Phase 10+)
+│   │   │   │   ├── services/       ← (vacío — Phase 9+)
+│   │   │   │   └── types.ts        ← DashboardZone, DashboardProfile, etc.
+│   │   │   └── [future-module]/    ← mismo patrón; registrar nav en config/navigation.ts
+│   │   ├── config/
+│   │   │   └── navigation.ts       ← registro central de nav; combina nav de todos los features
 │   │   ├── shared/
-│   │   │   ├── components/         ← shared web components
-│   │   │   ├── hooks/              ← useAuth, usePermissions, useGroups
-│   │   │   └── types/              ← re-exports from packages/shared
-│   │   └── config/                 ← env and constants
+│   │   │   ├── components/
+│   │   │   │   └── shell/          ← Sidebar, Topbar (app shell, no específico de feature)
+│   │   │   ├── hooks/              ← useAuthSignIn, useAuthSignOut
+│   │   │   └── lib/                ← errors, utils
+│   │   ├── components/
+│   │   │   └── ui/                 ← componentes TheGridCN instalados vía CLI
+│   │   └── lib/                    ← auth context, supabase client, env, utils
 │   │
 │   └── companion/                  ← Expo React Native → deploy: EAS
 │       ├── app/
@@ -58,9 +70,9 @@ dreyk/
 │
 ├── packages/
 │   └── shared/                     ← shared across both apps
-│       ├── supabaseClient.ts       ← singleton client
-│       ├── types/                  ← Database, Zone, Profile, etc.
-│       └── utils/                  ← haversine, formatters
+│       ├── supabase/               ← singleton client (browser + server)
+│       ├── types/                  ← Database, Zone, Profile, ThemePreference, etc.
+│       └── utils/                  ← haversine
 │
 ├── supabase/
 │   ├── migrations/                 ← SQL migration files
@@ -72,7 +84,7 @@ dreyk/
 └── turbo.json                      ← Turborepo build orchestration
 ```
 
-**Golden rule:** features never import from each other. Anything shared moves to `packages/shared` (cross-app) or `apps/[app]/shared/` (within-app).
+**Golden rule:** features never import from each other. Anything shared moves to `packages/shared` (cross-app) or `apps/web/shared/` (within-app). The `apps/web/shared/` directory is reserved for true cross-feature code — app shell, auth hooks, error utilities. Feature-specific code lives exclusively in `features/[name]/`.
 
 ---
 
@@ -83,6 +95,8 @@ dreyk/
 | Layer | Tool | Role |
 |---|---|---|
 | Framework | Next.js 14 (App Router) | pages, routing, SSR |
+| UI system | TheGridCN | mandatory end-to-end design system (installed via CLI into `components/ui/`) |
+| UI dependency | shadcn/ui | underlying registry required by TheGridCN; not a parallel design path |
 | Map | mapcn (MapLibre) | zone map, live user markers |
 | Styling | Tailwind CSS | utility-first styling |
 | State | Zustand | global state per feature slice |
@@ -123,6 +137,27 @@ dreyk/
 - TypeScript, ESLint, Prettier (shared config at root)
 - Turborepo for build orchestration
 - GitHub — single monorepo
+
+---
+
+## Feature navigation pattern
+
+Each feature owns its nav items. The Sidebar knows nothing about specific features.
+
+```
+features/[name]/config/nav.ts     ← define NavItem[] for this feature
+        ↓ imported by
+apps/web/config/navigation.ts     ← PRIMARY_NAV = [...geofencingNav, ...futureNav]
+        ↓ imported by
+features/[name]/components/[Shell].tsx  ← passes navItems={PRIMARY_NAV} to Sidebar
+        ↓ prop
+shared/components/shell/Sidebar.tsx     ← renders navItems, no feature knowledge
+```
+
+Adding a new feature (`myFinances`, `notifications`, etc.):
+1. Create `features/[name]/config/nav.ts` with the feature's nav items.
+2. Import and spread into `PRIMARY_NAV` in `config/navigation.ts`.
+3. The Sidebar picks it up automatically — no Sidebar changes needed.
 
 ---
 
