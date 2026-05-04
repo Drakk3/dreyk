@@ -20,7 +20,7 @@ export default async function UserLandingPage(): Promise<JSX.Element> {
           <CardHeader className="gap-4">
             <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
               <div className="space-y-2">
-                <CardTitle className="text-2xl tracking-[0.12em] uppercase">User entry shell</CardTitle>
+                <CardTitle className="text-2xl tracking-[0.12em] uppercase">Mi princesa bella</CardTitle>
                 <CardDescription>
                   Session access confirmed for {authUserContext.profile.display_name}. Product surfaces stay
                   locked until later phases.
@@ -30,7 +30,7 @@ export default async function UserLandingPage(): Promise<JSX.Element> {
             </div>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
-            This landing page exists only to prove auth routing and protected-user access.
+            Aun no hay nada construido aqui, pero ya tenemos login funcional y en deploy YUPIIIIIII
           </CardContent>
         </Card>
       </div>
