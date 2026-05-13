@@ -38,10 +38,13 @@ dreyk/
 │   │   │   │   ├── components/
 │   │   │   │   ├── hooks/
 │   │   │   │   ├── services/
+│   │   │   │   ├── navigation.ts    ← feature-owned dashboard nav metadata
+│   │   │   │   ├── mockData.ts      ← temporary preview fixtures owned by the feature
 │   │   │   │   └── types.ts
 │   │   │   └── [future-module]/    ← pattern to replicate
 │   │   ├── shared/
 │   │   │   ├── components/         ← shared web components
+│   │   │   │   └── app-shell/      ← generic chrome only, feature copy stays in the feature
 │   │   │   ├── hooks/              ← useAuth, usePermissions, useGroups
 │   │   │   └── types/              ← re-exports from packages/shared
 │   │   └── config/                 ← env and constants
@@ -73,6 +76,8 @@ dreyk/
 ```
 
 **Golden rule:** features never import from each other. Anything shared moves to `packages/shared` (cross-app) or `apps/[app]/shared/` (within-app).
+
+**Feature contract:** the canonical feature layout remains `components/`, `hooks/`, `services/`, `store/`, and `types.ts`, but narrowly named root support files like `navigation.ts` or temporary `mockData.ts` are allowed when they keep feature ownership explicit. Broad catch-all buckets such as `config/` or `data/` are not part of the contract.
 
 ---
 

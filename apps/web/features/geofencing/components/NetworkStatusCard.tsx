@@ -1,4 +1,3 @@
-import * as React from 'react';
 import { DataCard } from '@/components/thegridcn/data-card';
 import { DataField } from '@/shared/components/primitives/DataField';
 
@@ -16,9 +15,7 @@ export function NetworkStatusCard(): JSX.Element {
         <div className="mt-2 p-3 rounded border-thin border-destructive/40 bg-destructive/10 glow-destructive">
           <div className="flex items-center gap-2">
             <span className="size-1.5 rounded-full bg-destructive blink shrink-0" />
-            <span className="font-mono text-[10px] tracking-widest text-destructive uppercase">
-              ATTENTION
-            </span>
+            <span className="font-mono text-[10px] tracking-widest text-destructive uppercase">ATTENTION</span>
           </div>
           <div className="mt-1 font-mono text-[11px] tracking-widest uppercase text-foreground/80">
             Mock degraded state for THEO.R companion token · preview only

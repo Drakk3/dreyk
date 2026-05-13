@@ -1,21 +1,32 @@
 'use client';
 
 import * as React from 'react';
+
 import { Button } from '@/components/ui/button';
 import { SessionSignOutButton } from '@/shared/components/SessionSignOutButton';
 
-interface TopbarProps {
-  onCmdK: () => void;
+interface AppTopbarProps {
+  breadcrumbs: string[];
+  highlightedBreadcrumbIndex?: number;
   initials: string;
+  onCommandOpen: () => void;
+  statusLabel: string;
 }
 
-export function Topbar({ onCmdK, initials }: TopbarProps): JSX.Element {
+export function AppTopbar({
+  breadcrumbs,
+  highlightedBreadcrumbIndex = 0,
+  initials,
+  onCommandOpen,
+  statusLabel,
+}: AppTopbarProps): JSX.Element {
   const [now, setNow] = React.useState<Date | null>(null);
 
   React.useEffect(() => {
     setNow(new Date());
-    const t = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(t);
+    const timer = setInterval(() => setNow(new Date()), 1000);
+
+    return () => clearInterval(timer);
   }, []);
 
   const time = now?.toUTCString().slice(17, 25) ?? '--:--:--';
@@ -24,17 +35,27 @@ export function Topbar({ onCmdK, initials }: TopbarProps): JSX.Element {
   return (
     <header className="flex items-center gap-4 h-14 px-5 border-b border-border bg-card/40 shrink-0">
       <div className="flex items-center gap-3">
-        <span className="font-mono text-[10px] tracking-widest text-foreground/40 uppercase">
-          PWA / WEB · APPS/WEB
-        </span>
-        <span className="font-mono text-[10px] text-foreground/30">/</span>
-        <span className="font-mono text-[10px] tracking-widest text-primary uppercase">
-          OPERATIONS
-        </span>
-        <span className="font-mono text-[10px] text-foreground/30">/</span>
-        <span className="font-mono text-[10px] tracking-widest text-foreground/60 uppercase">
-          DASHBOARD
-        </span>
+        {breadcrumbs.map((breadcrumb, index) => {
+          const isHighlighted = index === highlightedBreadcrumbIndex;
+          const isLast = index === breadcrumbs.length - 1;
+
+          return (
+            <React.Fragment key={`${breadcrumb}-${index}`}>
+              {index > 0 ? <span className="font-mono text-[10px] text-foreground/30">/</span> : null}
+              <span
+                className={`font-mono text-[10px] tracking-widest uppercase ${
+                  isHighlighted
+                    ? 'text-primary'
+                    : isLast
+                      ? 'text-foreground/60'
+                      : 'text-foreground/40'
+                }`}
+              >
+                {breadcrumb}
+              </span>
+            </React.Fragment>
+          );
+        })}
       </div>
 
       <div className="flex-1" />
@@ -42,7 +63,7 @@ export function Topbar({ onCmdK, initials }: TopbarProps): JSX.Element {
       <div className="hidden md:flex items-center gap-3">
         <div className="flex items-center gap-2 font-mono text-[10px] tracking-widest text-foreground/60 uppercase">
           <span className="text-primary">|</span>
-          <span>MOCK STATUS · PREVIEW</span>
+          <span>{statusLabel}</span>
           <span
             className="size-1 rounded-full bg-primary shrink-0"
             style={{ boxShadow: '0 0 6px var(--primary)' }}
@@ -61,7 +82,7 @@ export function Topbar({ onCmdK, initials }: TopbarProps): JSX.Element {
       <Button
         size="sm"
         variant="ghost"
-        onClick={onCmdK}
+        onClick={onCommandOpen}
         className="font-mono text-[10px] tracking-widest uppercase gap-2"
       >
         <span>⌕</span>

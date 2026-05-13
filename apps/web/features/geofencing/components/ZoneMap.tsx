@@ -1,24 +1,24 @@
 'use client';
 
-import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Brackets } from '@/shared/components/primitives/Brackets';
-import type { DashboardZone, DashboardUserPin, DashboardProfile } from '@/shared/types/dashboard';
+
+import type { DashboardProfile, DashboardUserPin, DashboardZone } from '../types';
 
 interface ZoneMapProps {
-  zones: DashboardZone[];
-  userPins: DashboardUserPin[];
+  onSelect: (id: string) => void;
   profiles: DashboardProfile[];
   selectedZone: string;
-  onSelect: (id: string) => void;
+  userPins: DashboardUserPin[];
+  zones: DashboardZone[];
 }
 
 export function ZoneMap({
-  zones,
-  userPins,
+  onSelect,
   profiles,
   selectedZone,
-  onSelect,
+  userPins,
+  zones,
 }: ZoneMapProps): JSX.Element {
   return (
     <div className="relative h-[380px] map-grid overflow-hidden rounded">
@@ -35,23 +35,23 @@ export function ZoneMap({
         style={{ boxShadow: '0 0 14px var(--primary)' }}
       />
 
-      <svg
-        viewBox="0 0 100 60"
-        className="absolute inset-0 w-full h-full"
-        preserveAspectRatio="none"
-      >
+      <svg viewBox="0 0 100 60" className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
         {userPins
-          .filter((p) => p.zone !== null)
-          .map((p) => {
-            const z = zones.find((zz) => zz.id === p.zone);
-            if (z === undefined) return null;
+          .filter((pin) => pin.zone !== null)
+          .map((pin) => {
+            const zone = zones.find((zoneItem) => zoneItem.id === pin.zone);
+
+            if (zone === undefined) {
+              return null;
+            }
+
             return (
               <line
-                key={p.id}
-                x1={p.x}
-                y1={p.y}
-                x2={z.x}
-                y2={z.y}
+                key={pin.id}
+                x1={pin.x}
+                y1={pin.y}
+                x2={zone.x}
+                y2={zone.y}
                 stroke="color-mix(in oklch, var(--primary) 30%, transparent)"
                 strokeWidth="0.15"
                 strokeDasharray="0.6 0.4"
@@ -59,35 +59,36 @@ export function ZoneMap({
             );
           })}
 
-        {zones.map((z) => {
-          const sel = selectedZone === z.id;
-          const stroke = !z.active
+        {zones.map((zone) => {
+          const isSelected = selectedZone === zone.id;
+          const stroke = !zone.active
             ? 'var(--muted-foreground)'
-            : sel
+            : isSelected
               ? 'var(--accent)'
               : 'var(--primary)';
-          const opacity = !z.active ? 0.35 : sel ? 1 : 0.7;
+          const opacity = !zone.active ? 0.35 : isSelected ? 1 : 0.7;
+
           return (
             <g
-              key={z.id}
-              onClick={() => onSelect(z.id)}
+              key={zone.id}
+              onClick={() => onSelect(zone.id)}
               style={{ cursor: 'pointer' }}
               opacity={opacity}
             >
               <circle
-                cx={z.x}
-                cy={z.y}
-                r={z.r / 22}
+                cx={zone.x}
+                cy={zone.y}
+                r={zone.r / 22}
                 fill={stroke}
-                fillOpacity={sel ? 0.12 : 0.06}
+                fillOpacity={isSelected ? 0.12 : 0.06}
                 stroke={stroke}
-                strokeWidth={sel ? '0.35' : '0.18'}
+                strokeWidth={isSelected ? '0.35' : '0.18'}
               />
-              {sel && (
+              {isSelected ? (
                 <circle
-                  cx={z.x}
-                  cy={z.y}
-                  r={z.r / 22}
+                  cx={zone.x}
+                  cy={zone.y}
+                  r={zone.r / 22}
                   fill="none"
                   stroke={stroke}
                   strokeWidth="0.15"
@@ -95,8 +96,8 @@ export function ZoneMap({
                 >
                   <animate
                     attributeName="r"
-                    from={z.r / 22}
-                    to={z.r / 18}
+                    from={zone.r / 22}
+                    to={zone.r / 18}
                     dur="2s"
                     repeatCount="indefinite"
                   />
@@ -108,62 +109,49 @@ export function ZoneMap({
                     repeatCount="indefinite"
                   />
                 </circle>
-              )}
-              <circle cx={z.x} cy={z.y} r="0.25" fill={stroke} />
+              ) : null}
+              <circle cx={zone.x} cy={zone.y} r="0.25" fill={stroke} />
               <text
-                x={z.x + z.r / 22 + 0.5}
-                y={z.y - 0.6}
+                x={zone.x + zone.r / 22 + 0.5}
+                y={zone.y - 0.6}
                 fill={stroke}
                 fontSize="1.2"
                 fontFamily="JetBrains Mono, monospace"
                 letterSpacing="0.05em"
               >
-                {z.name}
+                {zone.name}
               </text>
               <text
-                x={z.x + z.r / 22 + 0.5}
-                y={z.y + 0.8}
+                x={zone.x + zone.r / 22 + 0.5}
+                y={zone.y + 0.8}
                 fill="color-mix(in oklch, var(--foreground) 50%, transparent)"
                 fontSize="0.9"
                 fontFamily="JetBrains Mono, monospace"
               >
-                R={z.radius_m}M / N={z.members}
+                R={zone.radius_m}M / N={zone.members}
               </text>
             </g>
           );
         })}
 
-        {userPins.map((p) => {
-          const profile = profiles.find((pp) => pp.id === p.id);
-          if (profile === undefined) return null;
+        {userPins.map((pin) => {
+          const profile = profiles.find((profileItem) => profileItem.id === pin.id);
+
+          if (profile === undefined) {
+            return null;
+          }
+
           return (
-            <g key={p.id}>
-              <circle cx={p.x} cy={p.y} r="0.9" fill={p.color}>
-                <animate
-                  attributeName="r"
-                  values="0.9;1.4;0.9"
-                  dur="2.4s"
-                  repeatCount="indefinite"
-                />
-                <animate
-                  attributeName="opacity"
-                  values="1;0.4;1"
-                  dur="2.4s"
-                  repeatCount="indefinite"
-                />
+            <g key={pin.id}>
+              <circle cx={pin.x} cy={pin.y} r="0.9" fill={pin.color}>
+                <animate attributeName="r" values="0.9;1.4;0.9" dur="2.4s" repeatCount="indefinite" />
+                <animate attributeName="opacity" values="1;0.4;1" dur="2.4s" repeatCount="indefinite" />
               </circle>
-              <circle
-                cx={p.x}
-                cy={p.y}
-                r="0.5"
-                fill={p.color}
-                stroke="var(--background)"
-                strokeWidth="0.12"
-              />
+              <circle cx={pin.x} cy={pin.y} r="0.5" fill={pin.color} stroke="var(--background)" strokeWidth="0.12" />
               <text
-                x={p.x + 1.2}
-                y={p.y + 0.4}
-                fill={p.color}
+                x={pin.x + 1.2}
+                y={pin.y + 0.4}
+                fill={pin.color}
                 fontSize="1"
                 fontFamily="JetBrains Mono, monospace"
                 letterSpacing="0.05em"
@@ -189,9 +177,7 @@ export function ZoneMap({
           className="size-1.5 rounded-full bg-primary blink"
           style={{ boxShadow: '0 0 8px var(--primary)' }}
         />
-        <span className="font-mono text-[10px] tracking-widest text-primary uppercase">
-          MOCK / PREVIEW
-        </span>
+        <span className="font-mono text-[10px] tracking-widest text-primary uppercase">MOCK / PREVIEW</span>
       </div>
 
       <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between gap-4">
@@ -199,20 +185,10 @@ export function ZoneMap({
           mock telemetry · ch: location_events preview
         </div>
         <div className="flex gap-2">
-          <Button
-            disabled
-            size="sm"
-            variant="outline"
-            className="font-mono text-[10px] tracking-widest uppercase"
-          >
+          <Button disabled size="sm" variant="outline" className="font-mono text-[10px] tracking-widest uppercase">
             + MOCK ZONE
           </Button>
-          <Button
-            disabled
-            size="sm"
-            variant="ghost"
-            className="font-mono text-[10px] tracking-widest uppercase"
-          >
+          <Button disabled size="sm" variant="ghost" className="font-mono text-[10px] tracking-widest uppercase">
             RECENTER PREVIEW
           </Button>
         </div>

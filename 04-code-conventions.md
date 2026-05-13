@@ -58,6 +58,8 @@ features/[name]/
 └── types.ts
 ```
 
+Narrow root support files such as `navigation.ts` or temporary `mockData.ts` are allowed when they are clearly feature-owned and do not fit the core folders. Do not introduce broad catch-all feature directories like `config/` or `data/`.
+
 ---
 
 ## Hook pattern

@@ -85,7 +85,7 @@ export function useXxx() {
 
 ### 9. Feature Structure
 
-Every feature MUST follow this exact internal layout — no extra directories:
+Every feature MUST follow this core internal layout:
 
 ```
 features/[name]/
@@ -95,6 +95,9 @@ features/[name]/
 ├── store/        ← Zustand state slice
 └── types.ts      ← feature-scoped types
 ```
+
+- **ALLOW** narrowly named root support files like `navigation.ts` or temporary `mockData.ts` when they keep ownership obvious and do not justify a broader folder.
+- **REJECT** broad catch-all feature directories such as `config/` or `data/` unless the architecture doc is explicitly updated first.
 
 - **REJECT** business logic directly in `components/`
 - **REJECT** React code in `services/`

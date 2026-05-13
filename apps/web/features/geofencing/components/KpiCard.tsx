@@ -1,4 +1,3 @@
-import * as React from 'react';
 import { DataCard } from '@/components/thegridcn/data-card';
 
 interface KpiCardProps {
@@ -23,7 +22,7 @@ export function KpiCard({
         <div className="flex items-end gap-2">
           <span className="text-primary font-mono text-2xl">|</span>
           <span className="font-mono text-3xl tracking-tight">{value}</span>
-          {trend !== undefined && (
+          {trend !== undefined ? (
             <span
               className={`font-mono text-[10px] tracking-widest uppercase ${
                 trend.dir === 'up' ? 'text-accent' : 'text-destructive'
@@ -31,7 +30,7 @@ export function KpiCard({
             >
               {trend.dir === 'up' ? '▲' : '▼'} {trend.val}
             </span>
-          )}
+          ) : null}
         </div>
         <div className="flex items-center gap-2 text-[10px] tracking-widest text-foreground/40 uppercase">
           <span className="size-1 rounded-full bg-primary shrink-0" />

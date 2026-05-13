@@ -1,6 +1,4 @@
-import * as React from 'react';
-
-const TICKER_ITEMS = [
+const TICKER_ITEMS: string[] = [
   '06:42:11 / HELENA.M / ENTER / OFICINA / DIST 12M',
   '06:39:48 / DRAKK3 / EXIT / CASA-NORTH / DIST 132M',
   '06:33:02 / IKER.A / ENTER / ESCUELA / DIST 24M',
@@ -10,7 +8,7 @@ const TICKER_ITEMS = [
   '06:02:30 / HELENA.M / EXIT / CASA-NORTH / DIST 96M',
 ];
 
-const STREAM = [...TICKER_ITEMS, ...TICKER_ITEMS];
+const STREAM: string[] = [...TICKER_ITEMS, ...TICKER_ITEMS];
 
 export function EventTicker(): JSX.Element {
   return (
@@ -25,10 +23,10 @@ export function EventTicker(): JSX.Element {
         </div>
         <div className="flex-1 overflow-hidden">
           <div className="ticker-flow flex gap-8 whitespace-nowrap py-2 font-mono text-[11px] tracking-widest text-foreground/70">
-            {STREAM.map((t, i) => (
-              <span key={i} className="flex items-center gap-3">
+            {STREAM.map((tickerItem, index) => (
+              <span key={`${tickerItem}-${index}`} className="flex items-center gap-3">
                 <span className="text-primary">|</span>
-                {t}
+                {tickerItem}
               </span>
             ))}
           </div>

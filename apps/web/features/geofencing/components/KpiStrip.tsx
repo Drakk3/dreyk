@@ -1,4 +1,3 @@
-import * as React from 'react';
 import { KpiCard } from './KpiCard';
 
 export function KpiStrip(): JSX.Element {

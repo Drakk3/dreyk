@@ -3,7 +3,7 @@ import type {
   DashboardProfile,
   DashboardUserPin,
   DashboardZone,
-} from '@/shared/types/dashboard';
+} from './types';
 
 export const MOCK_PROFILES: DashboardProfile[] = [
   { id: 'u-01', name: 'Drakk3', role: 'admin', color: 'var(--chart-1)', initials: 'DK' },

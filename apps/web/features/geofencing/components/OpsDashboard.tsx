@@ -4,87 +4,71 @@ import * as React from 'react';
 import type { Profile } from '@dreyk/shared/types/domain';
 import type { Role } from '@dreyk/shared/types/database';
 
-import { Sidebar } from './Sidebar';
-import { Topbar } from './Topbar';
 import { CommandMenu } from '@/components/thegridcn/command-menu';
-import { Button } from '@/components/ui/button';
 import { DataCard } from '@/components/thegridcn/data-card';
-import { KpiStrip } from '@/shared/components/dashboard-pieces/KpiStrip';
-import { ZoneMap } from '@/shared/components/dashboard-pieces/ZoneMap';
-import { ZoneRoster } from '@/shared/components/dashboard-pieces/ZoneRoster';
-import { ActivityChart } from '@/shared/components/dashboard-pieces/ActivityChart';
-import { MembersPanel } from '@/shared/components/dashboard-pieces/MembersPanel';
-import { ModuleStatus } from '@/shared/components/dashboard-pieces/ModuleStatus';
-import { EventsTable } from '@/shared/components/dashboard-pieces/EventsTable';
-import { NetworkStatusCard } from '@/shared/components/dashboard-pieces/NetworkStatusCard';
-import { EventTicker } from '@/shared/components/dashboard-pieces/EventTicker';
+import { Button } from '@/components/ui/button';
+import { AppSidebar } from '@/shared/components/app-shell/AppSidebar';
+import { AppTopbar } from '@/shared/components/app-shell/AppTopbar';
 import { useAuthSignOut } from '@/shared/hooks/useAuthSignOut';
 
-import {
-  MOCK_ZONES,
-  MOCK_USER_PINS,
-  MOCK_PROFILES,
-  MOCK_EVENTS,
-} from '@/shared/data/dashboardMockData';
+import { MOCK_EVENTS, MOCK_PROFILES, MOCK_USER_PINS, MOCK_ZONES } from '../mockData';
+import { GEOFENCING_COMMANDS, GEOFENCING_NAV_SECTIONS } from '../navigation';
+import { ActivityChart } from './ActivityChart';
+import { EventsTable } from './EventsTable';
+import { EventTicker } from './EventTicker';
+import { KpiStrip } from './KpiStrip';
+import { MembersPanel } from './MembersPanel';
+import { ModuleStatus } from './ModuleStatus';
+import { NetworkStatusCard } from './NetworkStatusCard';
+import { ZoneMap } from './ZoneMap';
+import { ZoneRoster } from './ZoneRoster';
 
 interface OpsDashboardProps {
   profile: Profile;
   role: Role;
 }
 
+interface CommandItem {
+  group: string;
+  label: string;
+  onSelect: () => void;
+  shortcut?: string;
+}
+
 function getInitials(displayName: string): string {
   return displayName
     .split(/[\s._-]+/)
-    .map((w) => w[0] ?? '')
+    .map((word) => word[0] ?? '')
     .join('')
     .slice(0, 2)
     .toUpperCase();
 }
 
-interface CommandItem {
-  group: string;
-  label: string;
-  shortcut?: string;
-  onSelect: () => void;
-}
-
-interface NavCommand {
-  key: string;
-  label: string;
-  shortcut: string;
-}
-
-const NAV_COMMANDS: NavCommand[] = [
-  { key: 'ops', label: 'Open Operations', shortcut: 'G O' },
-  { key: 'zones', label: 'Open Zones', shortcut: 'G Z' },
-  { key: 'members', label: 'Open Members', shortcut: 'G M' },
-  { key: 'events', label: 'Open Events', shortcut: 'G E' },
-];
-
 export function OpsDashboard({ profile, role }: OpsDashboardProps): JSX.Element {
   const { handleSignOut } = useAuthSignOut();
-  const [activeNav, setActiveNav] = React.useState('ops');
-  const [selectedZone, setSelectedZone] = React.useState('z-01');
-  const [cmdOpen, setCmdOpen] = React.useState(false);
+  const [activeNav, setActiveNav] = React.useState<string>('ops');
+  const [selectedZone, setSelectedZone] = React.useState<string>(MOCK_ZONES[0]?.id ?? 'z-01');
+  const [isCommandMenuOpen, setIsCommandMenuOpen] = React.useState<boolean>(false);
 
   const initials = getInitials(profile.display_name);
+  const selectedZoneData = MOCK_ZONES.find((zone) => zone.id === selectedZone);
 
-  const cmdItems: CommandItem[] = [
-    ...NAV_COMMANDS.map((item) => ({
+  const commandItems: CommandItem[] = [
+    ...GEOFENCING_COMMANDS.map((command) => ({
       group: 'NAVIGATE',
-      label: item.label,
-      shortcut: item.shortcut,
-      onSelect: () => setActiveNav(item.key),
+      label: command.label,
+      onSelect: () => setActiveNav(command.key),
+      shortcut: command.shortcut,
     })),
     {
       group: 'ACTIONS',
       label: 'Sign out',
+      onSelect: () => {
+        void handleSignOut();
+      },
       shortcut: '⌘ ⇧ Q',
-      onSelect: () => void handleSignOut(),
     },
   ];
-
-  const selectedZoneData = MOCK_ZONES.find((z) => z.id === selectedZone);
 
   return (
     <div className="min-h-screen flex bg-background relative overflow-hidden">
@@ -97,16 +81,25 @@ export function OpsDashboard({ profile, role }: OpsDashboardProps): JSX.Element 
         }}
       />
 
-      <Sidebar
-        active={activeNav}
-        onNav={setActiveNav}
-        displayName={profile.display_name}
-        role={role}
-        initials={initials}
+      <AppSidebar
+        activeItemKey={activeNav}
+        brandName="DREYK"
+        brandTagline="PHASE 3 / ARES"
+        navSections={GEOFENCING_NAV_SECTIONS}
+        onItemSelect={setActiveNav}
+        userDisplayName={profile.display_name}
+        userInitials={initials}
+        userRoleLabel={`${role.toUpperCase()} · ARES`}
       />
 
       <div className="relative flex-1 min-w-0 flex flex-col min-h-screen">
-        <Topbar onCmdK={() => setCmdOpen(true)} initials={initials} />
+        <AppTopbar
+          breadcrumbs={['PWA / WEB · APPS/WEB', 'OPERATIONS', 'DASHBOARD']}
+          highlightedBreadcrumbIndex={1}
+          initials={initials}
+          onCommandOpen={() => setIsCommandMenuOpen(true)}
+          statusLabel="MOCK STATUS · PREVIEW"
+        />
 
         <main className="flex-1 overflow-y-auto">
           <div className="px-6 py-6 space-y-5">
@@ -121,37 +114,22 @@ export function OpsDashboard({ profile, role }: OpsDashboardProps): JSX.Element 
                 </h1>
                 <p className="text-sm text-muted-foreground tracking-[0.12em] uppercase mt-1">
                   Phase 3 access · Mock telemetry preview{' '}
-                  <span className="text-foreground/80 font-mono">location_events</span> · not wired
-                  to live data
+                  <span className="text-foreground/80 font-mono">location_events</span> · not wired to live data
                 </p>
               </div>
-              {role === 'admin' && (
+              {role === 'admin' ? (
                 <div className="flex items-center gap-2">
-                  <Button
-                    disabled
-                    variant="outline"
-                    size="sm"
-                    className="font-mono text-[10px] tracking-widest uppercase"
-                  >
+                  <Button disabled variant="outline" size="sm" className="font-mono text-[10px] tracking-widest uppercase">
                     EXPORT MOCK
                   </Button>
-                  <Button
-                    disabled
-                    variant="outline"
-                    size="sm"
-                    className="font-mono text-[10px] tracking-widest uppercase"
-                  >
+                  <Button disabled variant="outline" size="sm" className="font-mono text-[10px] tracking-widest uppercase">
                     AUDIT PREVIEW
                   </Button>
-                  <Button
-                    disabled
-                    size="sm"
-                    className="font-mono text-[10px] tracking-widest uppercase"
-                  >
+                  <Button disabled size="sm" className="font-mono text-[10px] tracking-widest uppercase">
                     + MOCK ZONE
                   </Button>
                 </div>
-              )}
+              ) : null}
             </div>
 
             <KpiStrip />
@@ -169,40 +147,30 @@ export function OpsDashboard({ profile, role }: OpsDashboardProps): JSX.Element 
               >
                 <div className="p-3">
                   <ZoneMap
-                    zones={MOCK_ZONES}
-                    userPins={MOCK_USER_PINS}
+                    onSelect={setSelectedZone}
                     profiles={MOCK_PROFILES}
                     selectedZone={selectedZone}
-                    onSelect={setSelectedZone}
+                    userPins={MOCK_USER_PINS}
+                    zones={MOCK_ZONES}
                   />
                   <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-px bg-border/30 border-thin border-border/30 rounded overflow-hidden">
                     <div className="bg-card px-3 py-2">
-                      <div className="text-[10px] tracking-widest text-foreground/50 uppercase">
-                        SELECTED
-                      </div>
+                      <div className="text-[10px] tracking-widest text-foreground/50 uppercase">SELECTED</div>
                       <div className="font-mono text-xs text-primary tracking-widest uppercase mt-0.5">
                         <span className="text-primary">| </span>
                         {selectedZoneData?.name}
                       </div>
                     </div>
                     <div className="bg-card px-3 py-2">
-                      <div className="text-[10px] tracking-widest text-foreground/50 uppercase">
-                        RADIUS
-                      </div>
+                      <div className="text-[10px] tracking-widest text-foreground/50 uppercase">RADIUS</div>
                       <div className="font-mono text-xs mt-0.5">{selectedZoneData?.radius_m}M</div>
                     </div>
                     <div className="bg-card px-3 py-2">
-                      <div className="text-[10px] tracking-widest text-foreground/50 uppercase">
-                        MEMBERS
-                      </div>
-                      <div className="font-mono text-xs mt-0.5">
-                        {selectedZoneData?.members} INSIDE
-                      </div>
+                      <div className="text-[10px] tracking-widest text-foreground/50 uppercase">MEMBERS</div>
+                      <div className="font-mono text-xs mt-0.5">{selectedZoneData?.members} INSIDE</div>
                     </div>
                     <div className="bg-card px-3 py-2">
-                      <div className="text-[10px] tracking-widest text-foreground/50 uppercase">
-                        ALEXA
-                      </div>
+                      <div className="text-[10px] tracking-widest text-foreground/50 uppercase">ALEXA</div>
                       <div className="font-mono text-xs mt-0.5">
                         {selectedZoneData?.alexa === true ? 'LINKED' : '—'}
                       </div>
@@ -211,11 +179,7 @@ export function OpsDashboard({ profile, role }: OpsDashboardProps): JSX.Element 
                 </div>
               </DataCard>
 
-              <ZoneRoster
-                zones={MOCK_ZONES}
-                selectedZone={selectedZone}
-                onSelect={setSelectedZone}
-              />
+              <ZoneRoster onSelect={setSelectedZone} selectedZone={selectedZone} zones={MOCK_ZONES} />
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_1fr_1fr] gap-4">
@@ -240,9 +204,9 @@ export function OpsDashboard({ profile, role }: OpsDashboardProps): JSX.Element 
       </div>
 
       <CommandMenu
-        open={cmdOpen}
-        onOpenChange={setCmdOpen}
-        items={cmdItems}
+        open={isCommandMenuOpen}
+        onOpenChange={setIsCommandMenuOpen}
+        items={commandItems}
         label="DREYK / COMMAND"
         placeholder="Type a command…"
       />
