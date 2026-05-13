@@ -87,7 +87,7 @@ export async function redirectAuthenticatedUser(): Promise<void> {
   }
 
   if (authUserContext !== null) {
-    redirect(getRoleRedirectPath(authUserContext.role));
+    redirect(getRoleRedirectPath());
   }
 }
 
@@ -114,33 +114,29 @@ export async function requireAdminUser(): Promise<AuthUserContext> {
     authUserContext = await requireAuthenticatedUser();
   } catch (error: unknown) {
     handleError(error, 'authContext.requireAdminUser');
-    redirect('/app');
+    redirect('/');
   }
 
   if (authUserContext.role !== 'admin') {
-    redirect('/app');
+    redirect('/');
   }
 
   return authUserContext;
 }
 
-export async function requireStandardUser(): Promise<AuthUserContext> {
+export async function requireAuthenticatedAppUser(): Promise<AuthUserContext> {
   let authUserContext: AuthUserContext;
 
   try {
     authUserContext = await requireAuthenticatedUser();
   } catch (error: unknown) {
-    handleError(error, 'authContext.requireStandardUser');
+    handleError(error, 'authContext.requireAuthenticatedAppUser');
     redirect('/login');
-  }
-
-  if (authUserContext.role === 'admin') {
-    redirect('/admin');
   }
 
   return authUserContext;
 }
 
-export function getRoleRedirectPath(role: Role): '/admin' | '/app' {
-  return role === 'admin' ? '/admin' : '/app';
+export function getRoleRedirectPath(): '/' {
+  return '/';
 }

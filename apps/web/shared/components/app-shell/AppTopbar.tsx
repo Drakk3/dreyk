@@ -3,7 +3,6 @@
 import * as React from 'react';
 
 import { Button } from '@/components/ui/button';
-import { SessionSignOutButton } from '@/shared/components/SessionSignOutButton';
 
 interface AppTopbarProps {
   breadcrumbs: string[];
@@ -33,7 +32,7 @@ export function AppTopbar({
   const date = now?.toISOString().slice(0, 10) ?? '----.--.--';
 
   return (
-    <header className="flex items-center gap-4 h-14 px-5 border-b border-border bg-card/40 shrink-0">
+    <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-4 border-b border-border bg-card/80 px-5 backdrop-blur">
       <div className="flex items-center gap-3">
         {breadcrumbs.map((breadcrumb, index) => {
           const isHighlighted = index === highlightedBreadcrumbIndex;
@@ -89,8 +88,6 @@ export function AppTopbar({
         COMMAND
         <kbd className="font-mono text-[9px] px-1 py-px rounded border-thin border-border">⌘K</kbd>
       </Button>
-
-      <SessionSignOutButton className="font-mono text-[10px] tracking-widest uppercase" />
 
       <div className="size-9 rounded-full border-thin border-primary/40 bg-primary/10 flex items-center justify-center font-mono text-xs text-primary shrink-0">
         {initials}

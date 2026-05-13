@@ -1,15 +1,17 @@
 'use client';
 
 import * as React from 'react';
+
 import type { Profile } from '@dreyk/shared/types/domain';
 import type { Role } from '@dreyk/shared/types/database';
 
 import { CommandMenu } from '@/components/thegridcn/command-menu';
 import { DataCard } from '@/components/thegridcn/data-card';
 import { Button } from '@/components/ui/button';
+import { useGlobalCommandMenu } from '@/shared/command-center/useGlobalCommandMenu';
+import type { SharedCommandMenuItem } from '@/shared/command-center/types';
 import { AppSidebar } from '@/shared/components/app-shell/AppSidebar';
 import { AppTopbar } from '@/shared/components/app-shell/AppTopbar';
-import { useAuthSignOut } from '@/shared/hooks/useAuthSignOut';
 
 import { MOCK_EVENTS, MOCK_PROFILES, MOCK_USER_PINS, MOCK_ZONES } from '../mockData';
 import { GEOFENCING_COMMANDS, GEOFENCING_NAV_SECTIONS } from '../navigation';
@@ -28,13 +30,6 @@ interface OpsDashboardProps {
   role: Role;
 }
 
-interface CommandItem {
-  group: string;
-  label: string;
-  onSelect: () => void;
-  shortcut?: string;
-}
-
 function getInitials(displayName: string): string {
   return displayName
     .split(/[\s._-]+/)
@@ -45,30 +40,28 @@ function getInitials(displayName: string): string {
 }
 
 export function OpsDashboard({ profile, role }: OpsDashboardProps): JSX.Element {
-  const { handleSignOut } = useAuthSignOut();
   const [activeNav, setActiveNav] = React.useState<string>('ops');
   const [selectedZone, setSelectedZone] = React.useState<string>(MOCK_ZONES[0]?.id ?? 'z-01');
-  const [isCommandMenuOpen, setIsCommandMenuOpen] = React.useState<boolean>(false);
 
   const initials = getInitials(profile.display_name);
   const selectedZoneData = MOCK_ZONES.find((zone) => zone.id === selectedZone);
 
-  const commandItems: CommandItem[] = [
-    ...GEOFENCING_COMMANDS.map((command) => ({
+  const localCommandItems = React.useMemo<SharedCommandMenuItem[]>(() => {
+    return GEOFENCING_COMMANDS.map((command) => ({
       group: 'NAVIGATE',
       label: command.label,
       onSelect: () => setActiveNav(command.key),
       shortcut: command.shortcut,
-    })),
-    {
-      group: 'ACTIONS',
-      label: 'Sign out',
-      onSelect: () => {
-        void handleSignOut();
-      },
-      shortcut: '⌘ ⇧ Q',
-    },
-  ];
+      description: `Focus the ${command.label.toLowerCase()} panel inside geofencing.`,
+    }));
+  }, []);
+
+  const {
+    commandItems,
+    handleCommandMenuChange,
+    handleCommandMenuOpen,
+    isCommandMenuOpen,
+  } = useGlobalCommandMenu({ currentSurface: 'geofencing', localItems: localCommandItems, role });
 
   return (
     <div className="min-h-screen flex bg-background relative overflow-hidden">
@@ -97,7 +90,7 @@ export function OpsDashboard({ profile, role }: OpsDashboardProps): JSX.Element 
           breadcrumbs={['PWA / WEB · APPS/WEB', 'OPERATIONS', 'DASHBOARD']}
           highlightedBreadcrumbIndex={1}
           initials={initials}
-          onCommandOpen={() => setIsCommandMenuOpen(true)}
+          onCommandOpen={handleCommandMenuOpen}
           statusLabel="MOCK STATUS · PREVIEW"
         />
 
@@ -205,10 +198,10 @@ export function OpsDashboard({ profile, role }: OpsDashboardProps): JSX.Element 
 
       <CommandMenu
         open={isCommandMenuOpen}
-        onOpenChange={setIsCommandMenuOpen}
+        onOpenChange={handleCommandMenuChange}
         items={commandItems}
         label="DREYK / COMMAND"
-        placeholder="Type a command…"
+        placeholder="Search workspaces or geofencing panels…"
       />
     </div>
   );

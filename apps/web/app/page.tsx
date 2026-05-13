@@ -1,20 +1,14 @@
-import { redirect } from 'next/navigation';
-
-import { getAuthUserContext, getRoleRedirectPath, type AuthUserContext } from '@/lib/auth/authContext';
+import { LauncherHome } from '@/features/launcher/components/LauncherHome';
+import { requireAuthenticatedUser, type AuthUserContext } from '@/lib/auth/authContext';
 import { handleError } from '@/shared/lib/errors';
 
-export default async function HomePage(): Promise<never> {
-  let authUserContext: AuthUserContext | null = null;
-
+export default async function HomePage(): Promise<JSX.Element> {
   try {
-    authUserContext = await getAuthUserContext();
+    const authUserContext: AuthUserContext = await requireAuthenticatedUser();
+
+    return <LauncherHome profile={authUserContext.profile} role={authUserContext.role} />;
   } catch (error: unknown) {
     handleError(error, 'HomePage');
+    throw error;
   }
-
-  if (authUserContext === null) {
-    redirect('/login');
-  }
-
-  redirect(getRoleRedirectPath(authUserContext.role));
 }
