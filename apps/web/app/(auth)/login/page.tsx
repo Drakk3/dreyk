@@ -5,12 +5,12 @@ import type { FormEvent } from 'react';
 import { useState } from 'react';
 
 import { CircuitBackground } from '@/components/thegridcn/CircuitBackground';
+import { DataCard } from '@/components/thegridcn/data-card';
 import { GlowContainer } from '@/components/thegridcn/GlowContainer';
-import { Button } from '@/components/ui/Button';
-import { Checkbox } from '@/components/ui/Checkbox';
-import { DataCard } from '@/components/ui/DataCard';
-import { Input } from '@/components/ui/Input';
-import { Label } from '@/components/ui/Label';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useAuthSignIn } from '@/shared/hooks/useAuthSignIn';
 
 interface DecorativePanelItem {
@@ -101,7 +101,7 @@ export default function LoginPage(): JSX.Element {
         </section>
 
         <section className="flex items-center justify-center">
-          <GlowContainer className="w-full max-w-xl p-0 lg:min-h-[60vh]" hover={false} intensity="lg">
+          <GlowContainer className="w-full max-w-xl p-0 lg:min-h-[60vh]" hover={false} intensity="sm">
             <DataCard className="flex flex-col justify-center lg:min-h-[60vh]" fields={[]} status="active">
               <div className="space-y-4 border-b-[0.5px] border-border/80 px-6 py-7 md:px-8">
                 <div className="inline-flex w-fit items-center gap-2 rounded-full border-[0.5px] border-border bg-background/75 px-4 py-2 text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase">

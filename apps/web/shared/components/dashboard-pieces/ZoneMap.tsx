@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { Brackets } from '@/shared/components/primitives/Brackets';
 import type { DashboardZone, DashboardUserPin, DashboardProfile } from '@/shared/types/dashboard';
 

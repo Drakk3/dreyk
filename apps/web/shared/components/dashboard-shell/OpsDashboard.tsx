@@ -6,9 +6,9 @@ import type { Role } from '@dreyk/shared/types/database';
 
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
-import { CommandMenu } from '@/components/ui/CommandMenu';
-import { Button } from '@/components/ui/Button';
-import { DataCard } from '@/components/ui/DataCard';
+import { CommandMenu } from '@/components/thegridcn/command-menu';
+import { Button } from '@/components/ui/button';
+import { DataCard } from '@/components/thegridcn/data-card';
 import { KpiStrip } from '@/shared/components/dashboard-pieces/KpiStrip';
 import { ZoneMap } from '@/shared/components/dashboard-pieces/ZoneMap';
 import { ZoneRoster } from '@/shared/components/dashboard-pieces/ZoneRoster';

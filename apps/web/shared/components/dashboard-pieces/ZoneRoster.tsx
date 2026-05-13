@@ -1,8 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { DataCard } from '@/components/ui/DataCard';
-import { Button } from '@/components/ui/Button';
+import { DataCard } from '@/components/thegridcn/data-card';
+import { Button } from '@/components/ui/button';
 import type { DashboardZone } from '@/shared/types/dashboard';
 
 interface ZoneRosterProps {

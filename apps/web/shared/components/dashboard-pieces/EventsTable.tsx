@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { DataCard } from '@/components/ui/DataCard';
+import { DataCard } from '@/components/thegridcn/data-card';
 import type { DashboardEvent } from '@/shared/types/dashboard';
 
 type Filter = 'ALL' | 'ENTER' | 'EXIT';

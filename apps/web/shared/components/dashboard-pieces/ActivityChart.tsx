@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { DataCard } from '@/components/ui/DataCard';
+import { DataCard } from '@/components/thegridcn/data-card';
 
 type TimeRange = '1H' | '6H' | '24H' | '7D';
 

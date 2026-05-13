@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { DataCard } from '@/components/ui/DataCard';
+import { DataCard } from '@/components/thegridcn/data-card';
 
 interface ModulePreview {
   key: string;

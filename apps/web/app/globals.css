@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "../styles/thegridcn-theme.css";
+@import "../styles/thegridcn-intensity.css";
 
 @theme inline {
   --color-accent: var(--accent);

@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { useAuthSignOut } from '@/shared/hooks/useAuthSignOut';
 
 interface SessionSignOutButtonProps {
