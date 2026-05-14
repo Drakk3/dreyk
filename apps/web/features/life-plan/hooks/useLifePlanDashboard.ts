@@ -3,17 +3,23 @@
 import { useCallback, useMemo, useState } from 'react';
 
 import { LIFE_PLAN_HORIZON_OPTIONS, LIFE_PLAN_SNAPSHOT } from '../mockData';
+import { MAY_2026_REAL_DATA_SNAPSHOT } from '../realDataSnapshot';
 import { buildContingencyPlanSummary } from '../services/contingencyPlan';
 import { buildFinancialProjection } from '../services/financialPlan';
 import { buildTeachingPathSummary } from '../services/teachingPath';
+import { buildWeeklyCashFlowWorkspace } from '../services/weeklyCashFlowWorkspace';
 import type {
+  FinancialProjection,
   FinancialScenario,
+  LifePlanSnapshot,
   PlanningHorizonMonths,
   PlanningScenarioId,
+  WeeklyCashFlowWorkspace,
 } from '../types';
 
 interface UseLifePlanDashboardResult {
   contingencyPlan: ReturnType<typeof buildContingencyPlanSummary>;
+  cashFlowWorkspace: WeeklyCashFlowWorkspace;
   financialProjection: ReturnType<typeof buildFinancialProjection>;
   handleHorizonChange: (value: PlanningHorizonMonths) => void;
   handleScenarioChange: (value: PlanningScenarioId) => void;
@@ -22,7 +28,7 @@ interface UseLifePlanDashboardResult {
   selectedHorizonMonths: PlanningHorizonMonths;
   selectedScenario: FinancialScenario;
   selectedScenarioId: PlanningScenarioId;
-  snapshot: typeof LIFE_PLAN_SNAPSHOT;
+  snapshot: LifePlanSnapshot;
   teachingPath: ReturnType<typeof buildTeachingPathSummary>;
 }
 
@@ -49,6 +55,13 @@ function getSelectedScenario(selectedScenarioId: PlanningScenarioId): FinancialS
   };
 }
 
+function buildDashboardFinancialProjection(
+  selectedScenario: FinancialScenario,
+  selectedHorizonMonths: PlanningHorizonMonths,
+): FinancialProjection {
+  return buildFinancialProjection(LIFE_PLAN_SNAPSHOT, selectedScenario, selectedHorizonMonths);
+}
+
 export function useLifePlanDashboard(): UseLifePlanDashboardResult {
   // 1. External dependencies (store, router, clients)
 
@@ -62,8 +75,12 @@ export function useLifePlanDashboard(): UseLifePlanDashboardResult {
   }, [selectedScenarioId]);
 
   const financialProjection = useMemo(() => {
-    return buildFinancialProjection(LIFE_PLAN_SNAPSHOT, selectedScenario, selectedHorizonMonths);
+    return buildDashboardFinancialProjection(selectedScenario, selectedHorizonMonths);
   }, [selectedHorizonMonths, selectedScenario]);
+
+  const cashFlowWorkspace = useMemo(() => {
+    return buildWeeklyCashFlowWorkspace(MAY_2026_REAL_DATA_SNAPSHOT);
+  }, []);
 
   const teachingPath = useMemo(() => {
     return buildTeachingPathSummary(LIFE_PLAN_SNAPSHOT);
@@ -85,6 +102,7 @@ export function useLifePlanDashboard(): UseLifePlanDashboardResult {
   // 5. Single return object — NEVER return an array from a hook
   return {
     contingencyPlan,
+    cashFlowWorkspace,
     financialProjection,
     handleHorizonChange,
     handleScenarioChange,

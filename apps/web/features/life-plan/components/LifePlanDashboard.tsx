@@ -25,6 +25,7 @@ import { LifePlanHeroCard } from './LifePlanHeroCard';
 import { LifePlanKpiStrip } from './LifePlanKpiStrip';
 import { PriorityActionsCard } from './PriorityActionsCard';
 import { TeachingPathCard } from './TeachingPathCard';
+import { WeeklyCashFlowWorkspace } from './WeeklyCashFlowWorkspace';
 
 interface LifePlanDashboardProps {
   initialSection: LifePlanSectionKey;
@@ -44,6 +45,7 @@ function getInitials(displayName: string): string {
 export function LifePlanDashboard({ initialSection, profile, role }: LifePlanDashboardProps): JSX.Element {
   const {
     contingencyPlan,
+    cashFlowWorkspace,
     financialProjection,
     handleHorizonChange,
     handleScenarioChange,
@@ -117,7 +119,9 @@ export function LifePlanDashboard({ initialSection, profile, role }: LifePlanDas
           highlightedBreadcrumbIndex={2}
           initials={initials}
           onCommandOpen={handleCommandMenuOpen}
-          statusLabel="MOCK STATUS · JUAN DAVID / CUMARAL"
+          statusLabel={
+            activeSection === 'cash-flow' ? 'REAL DATA STATUS · CASH FLOW / USD' : 'MOCK STATUS · JUAN DAVID / CUMARAL'
+          }
         />
 
         <main className="flex-1 overflow-y-auto">
@@ -149,13 +153,17 @@ export function LifePlanDashboard({ initialSection, profile, role }: LifePlanDas
               />
             </div>
 
-            <LifePlanHeroCard currentMilestone={teachingPath.currentMilestone} snapshot={snapshot} />
-            <LifePlanKpiStrip
-              contingencyPlan={contingencyPlan}
-              financialProjection={financialProjection}
-              priorityActions={priorityActions}
-              teachingPath={teachingPath}
-            />
+            {activeSection !== 'cash-flow' ? (
+              <>
+                <LifePlanHeroCard currentMilestone={teachingPath.currentMilestone} snapshot={snapshot} />
+                <LifePlanKpiStrip
+                  contingencyPlan={contingencyPlan}
+                  financialProjection={financialProjection}
+                  priorityActions={priorityActions}
+                  teachingPath={teachingPath}
+                />
+              </>
+            ) : null}
 
             {activeSection === 'overview' ? (
               <div className="grid gap-4 xl:grid-cols-[1.35fr_1fr]">
@@ -191,12 +199,14 @@ export function LifePlanDashboard({ initialSection, profile, role }: LifePlanDas
               />
             ) : null}
 
+            {activeSection === 'cash-flow' ? <WeeklyCashFlowWorkspace workspace={cashFlowWorkspace} /> : null}
+
             {activeSection === 'teaching' ? <TeachingPathCard teachingPath={teachingPath} /> : null}
             {activeSection === 'contingencies' ? (
               <ContingencyCard contingencyPlan={contingencyPlan} />
             ) : null}
 
-            <PriorityActionsCard priorityActions={priorityActions} />
+            {activeSection !== 'cash-flow' ? <PriorityActionsCard priorityActions={priorityActions} /> : null}
 
             <footer className="flex items-center justify-between gap-4 pb-4 pt-2 font-mono text-[10px] uppercase tracking-widest text-foreground/30">
               <span>DREYK / LIFE PLAN PREVIEW · BUILT ON THEGRIDCN · ARES THEME</span>

@@ -1,4 +1,24 @@
-export type CurrencyCode = 'COP';
+export type CurrencyCode = 'COP' | 'USD';
+
+export type FinancialDataConfidence = 'verified' | 'estimated' | 'needsReview';
+
+export type CashFlowEventDirection = 'inflow' | 'outflow';
+
+export type CashFlowEventCategory =
+  | 'debtPayment'
+  | 'familySupport'
+  | 'foodAndFuel'
+  | 'housing'
+  | 'income'
+  | 'insurance'
+  | 'subscription'
+  | 'tuition'
+  | 'utility'
+  | 'other';
+
+export type RecurrenceCadence = 'weekly' | 'biweekly' | 'monthly' | 'oneTime';
+
+export type FinancialSourceKind = 'spreadsheet' | 'statement' | 'payStub' | 'loanDisclosure' | 'manual';
 
 export type PlanningScenarioId = 'baseline' | 'tightened' | 'accelerated';
 
@@ -12,7 +32,58 @@ export type ContingencySeverity = 'high' | 'medium' | 'low';
 
 export type PriorityActionWindow = '30d' | '90d';
 
-export type LifePlanSectionKey = 'overview' | 'finances' | 'teaching' | 'contingencies' | 'actions';
+export type LifePlanSectionKey = 'overview' | 'cash-flow' | 'finances' | 'teaching' | 'contingencies' | 'actions';
+
+export interface FinancialSourceMetadata {
+  label: string;
+  kind: FinancialSourceKind;
+  capturedOn: string;
+  notes?: string;
+}
+
+export interface CashFlowEvent {
+  id: string;
+  date: string;
+  label: string;
+  direction: CashFlowEventDirection;
+  category: CashFlowEventCategory;
+  amount: number;
+  currencyCode: CurrencyCode;
+  confidence: FinancialDataConfidence;
+  source: FinancialSourceMetadata;
+  notes?: string;
+}
+
+export interface RecurringObligation {
+  id: string;
+  label: string;
+  category: CashFlowEventCategory;
+  cadence: RecurrenceCadence;
+  expectedAmount: number;
+  currencyCode: CurrencyCode;
+  confidence: FinancialDataConfidence;
+  source: FinancialSourceMetadata;
+  nextDueDate?: string;
+  notes?: string;
+}
+
+export interface WeeklyCashFlowCheckpoint {
+  id: string;
+  weekStartDate: string;
+  weekEndDate: string;
+  startingBalance: number;
+  totalInflow: number;
+  totalOutflow: number;
+  endingBalance: number;
+  freeMargin: number;
+  eventIds: string[];
+}
+
+export interface DebtSourceMetadata extends FinancialSourceMetadata {
+  balanceConfidence: FinancialDataConfidence;
+  aprConfidence: FinancialDataConfidence;
+  minimumPaymentConfidence: FinancialDataConfidence;
+}
 
 export interface MonthlyCashFlow {
   netSalaryIncome: number;
@@ -33,6 +104,7 @@ export interface DebtItem {
   minPayment: number;
   priority: number;
   notes: string;
+  source?: DebtSourceMetadata;
 }
 
 export interface TeachingMilestone {
@@ -152,4 +224,78 @@ export interface TeachingPathSummary {
 export interface ContingencyPlanSummary {
   immediateActions: ContingencyItem[];
   orderedRisks: ContingencyItem[];
+}
+
+export interface CashFlowWorkspaceWeekEvent {
+  id: string;
+  date: string;
+  label: string;
+  direction: CashFlowEventDirection;
+  category: CashFlowEventCategory;
+  amount: number;
+  currencyCode: CurrencyCode;
+  confidence: FinancialDataConfidence;
+  isReviewRequired: boolean;
+  notes?: string;
+  sourceLabel: string;
+}
+
+export interface CashFlowWorkspaceWeek {
+  id: string;
+  label: string;
+  weekStartDate: string;
+  weekEndDate: string;
+  startingBalance: number;
+  totalInflow: number;
+  totalOutflow: number;
+  freeMargin: number;
+  endingBalance: number;
+  eventCount: number;
+  estimatedItemCount: number;
+  reviewItemCount: number;
+  events: CashFlowWorkspaceWeekEvent[];
+}
+
+export interface CashFlowWorkspaceSummary {
+  currencyCode: CurrencyCode;
+  totalInflow: number;
+  totalOutflow: number;
+  freeMargin: number;
+  totalWeeks: number;
+  totalEvents: number;
+  reviewItemCount: number;
+  validationIssueCount: number;
+}
+
+export interface ReviewQueueItem {
+  id: string;
+  label: string;
+  kind: 'event' | 'debt' | 'validation';
+  confidence: FinancialDataConfidence;
+  reason: string;
+  sourceLabel: string;
+  amount?: number;
+  currencyCode: CurrencyCode;
+  eventCategory?: CashFlowEventCategory;
+  weekStartDate?: string;
+  notes?: string;
+}
+
+export interface SafeExtraPaymentSummary {
+  amount: number;
+  basedOnWeekStartDate: string;
+  blockingReasons: string[];
+  confidence: FinancialDataConfidence;
+  currencyCode: CurrencyCode;
+  explanation: string;
+  minimumFutureEndingBalance: number;
+}
+
+export interface WeeklyCashFlowWorkspace {
+  asOfWeekStartDate: string;
+  currencyCode: CurrencyCode;
+  reviewQueue: ReviewQueueItem[];
+  safeExtraPayment: SafeExtraPaymentSummary;
+  summary: CashFlowWorkspaceSummary;
+  weeks: CashFlowWorkspaceWeek[];
 }
