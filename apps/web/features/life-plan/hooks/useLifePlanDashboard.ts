@@ -20,6 +20,7 @@ import {
   createInitialBootstrapMonth,
   createSeededPreviousMonthBootstrap,
   createSeedOperatingMonth,
+  rebaseOperatingMonthForPersistence,
 } from '../services/operatingMonthBootstrap';
 import {
   formatOperatingMonthLabel,
@@ -278,9 +279,58 @@ export function useLifePlanDashboard(): UseLifePlanDashboardResult {
     [loadMonth, operatingMonths, syncLoadedOperatingMonth],
   );
 
+  const ensurePersistedOperatingMonth = useCallback(
+    async (month: OperatingMonth): Promise<OperatingMonth | null> => {
+      if (isUuid(month.id)) {
+        return month;
+      }
+
+      const existingSummary = operatingMonthSummaries.find((summary) => summary.month === month.month);
+
+      if (existingSummary !== undefined) {
+        const existingMonth = await ensureOperatingMonthLoaded(existingSummary);
+
+        if (existingMonth !== null) {
+          return existingMonth;
+        }
+      }
+
+      const createdMonth = await createMonth({
+        month: month.month,
+        seededFromMonthId: month.seededFromMonthId ?? null,
+      });
+
+      if (createdMonth === null) {
+        return null;
+      }
+
+      const rebasedMonth = rebaseOperatingMonthForPersistence(
+        month,
+        createdMonth,
+        month.seededFromMonthId ?? null,
+      );
+      const persistedMonth = await saveMonth(rebasedMonth);
+
+      if (persistedMonth === null) {
+        return null;
+      }
+
+      syncLoadedOperatingMonth(persistedMonth);
+
+      return persistedMonth;
+    },
+    [createMonth, ensureOperatingMonthLoaded, operatingMonthSummaries, saveMonth, syncLoadedOperatingMonth],
+  );
+
   const persistMutatedOperatingMonth = useCallback(
     async (nextMonth: OperatingMonth): Promise<OperatingMonth | null> => {
-      const persistedMonth = await saveMonth(nextMonth);
+      const monthToPersist = await ensurePersistedOperatingMonth(nextMonth);
+
+      if (monthToPersist === null) {
+        return null;
+      }
+
+      const persistedMonth = await saveMonth(monthToPersist);
 
       if (persistedMonth !== null) {
         syncLoadedOperatingMonth(persistedMonth);
@@ -288,7 +338,7 @@ export function useLifePlanDashboard(): UseLifePlanDashboardResult {
 
       return persistedMonth;
     },
-    [saveMonth, syncLoadedOperatingMonth],
+    [ensurePersistedOperatingMonth, saveMonth, syncLoadedOperatingMonth],
   );
 
   useEffect(() => {
@@ -403,6 +453,13 @@ export function useLifePlanDashboard(): UseLifePlanDashboardResult {
     (offset: number): void => {
       void (async (): Promise<void> => {
         try {
+          const sourceMonth = offset > 0 ? await ensurePersistedOperatingMonth(activeOperatingMonth) : activeOperatingMonth;
+
+          if (offset > 0 && sourceMonth === null) {
+            return;
+          }
+
+          const referenceMonth = sourceMonth ?? activeOperatingMonth;
           const targetMonthKey = shiftOperatingMonth(activeOperatingMonth.month, offset);
           const existingSummary = operatingMonthSummaries.find((summary) => summary.month === targetMonthKey);
 
@@ -418,7 +475,7 @@ export function useLifePlanDashboard(): UseLifePlanDashboardResult {
 
           const createdMonth = await createMonth({
             month: targetMonthKey,
-            seededFromMonthId: offset > 0 ? activeOperatingMonth.id : null,
+            seededFromMonthId: offset > 0 && isUuid(referenceMonth.id) ? referenceMonth.id : null,
           });
 
           if (createdMonth === null) {
@@ -431,7 +488,7 @@ export function useLifePlanDashboard(): UseLifePlanDashboardResult {
             return;
           }
 
-          const bootstrappedMonth = createDerivedRecurringBootstrapMonth(activeOperatingMonth, createdMonth);
+          const bootstrappedMonth = createDerivedRecurringBootstrapMonth(referenceMonth, createdMonth);
           const persistedMonth = await saveMonth(bootstrappedMonth);
           const initialMonth = persistedMonth ?? createdMonth;
 
@@ -442,7 +499,7 @@ export function useLifePlanDashboard(): UseLifePlanDashboardResult {
         }
       })();
     },
-    [activeOperatingMonth, createMonth, ensureOperatingMonthLoaded, operatingMonthSummaries, saveMonth, syncLoadedOperatingMonth],
+    [activeOperatingMonth, createMonth, ensureOperatingMonthLoaded, ensurePersistedOperatingMonth, operatingMonthSummaries, saveMonth, syncLoadedOperatingMonth],
   );
 
   const handleCreateOperatingEntry = useCallback(

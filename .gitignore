@@ -12,3 +12,6 @@ apps/companion/.expo/
 supabase/.temp/
 supabase/.branches/
 apps/web/.env.local
+# Local Pi runtime state
+.atl/
+.pi/
