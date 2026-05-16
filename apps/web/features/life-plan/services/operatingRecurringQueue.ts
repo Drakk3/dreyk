@@ -159,14 +159,9 @@ function buildQueueItem(
   };
 }
 
-export function buildOperatingMonthFromRecurringTemplates(baseMonth: OperatingMonth, month: string): OperatingMonth {
+function createEmptyOperatingMonth(baseMonth: OperatingMonth, month: string): OperatingMonth {
   const monthId = createMonthId(month);
   const weeks = createWeeks(month);
-  const recurringQueue = baseMonth.recurringTemplates.flatMap((template) => {
-    return buildScheduledDates(template, month).map((scheduledDate) => {
-      return buildQueueItem(monthId, template, scheduledDate, resolveWeekId(weeks, scheduledDate));
-    });
-  });
 
   return {
     currencyCode: 'USD',
@@ -174,11 +169,58 @@ export function buildOperatingMonthFromRecurringTemplates(baseMonth: OperatingMo
     entries: [],
     id: monthId,
     month,
-    recurringQueue,
+    recurringQueue: [],
     recurringTemplates: baseMonth.recurringTemplates,
     statusHistory: [],
     weeks,
   };
+}
+
+function buildShiftedDate(previousDate: string, targetMonth: string): string {
+  const [, , dayText] = previousDate.split('-');
+  const { monthIndex, year } = parseMonth(targetMonth);
+  const boundedDay = Math.min(Number(dayText ?? '1'), getDaysInMonth(year, monthIndex));
+
+  return formatIsoDate(year, monthIndex, boundedDay);
+}
+
+export function buildOperatingMonthFromRecurringTemplates(baseMonth: OperatingMonth, month: string): OperatingMonth {
+  const emptyMonth = createEmptyOperatingMonth(baseMonth, month);
+
+  return {
+    ...emptyMonth,
+    recurringQueue: baseMonth.recurringTemplates.flatMap((template) => {
+      return buildScheduledDates(template, month).map((scheduledDate) => {
+        return buildQueueItem(emptyMonth.id, template, scheduledDate, resolveWeekId(emptyMonth.weeks, scheduledDate));
+      });
+    }),
+  };
+}
+
+export function buildOperatingMonthShell(baseMonth: OperatingMonth, month: string): OperatingMonth {
+  return createEmptyOperatingMonth(baseMonth, month);
+}
+
+export function seedOperatingMonthFromPreviousMonth(previousMonth: OperatingMonth, targetMonth: string): OperatingMonth {
+  const seededMonth = createEmptyOperatingMonth(previousMonth, targetMonth);
+
+  return previousMonth.entries
+    .filter((entry) => entry.status !== 'skipped')
+    .reduce<OperatingMonth>((currentMonth, entry) => {
+      return createOperatingEntry(currentMonth, {
+        amountUsd: entry.amountUsd,
+        category: entry.category,
+        confidence: entry.confidence,
+        date: buildShiftedDate(entry.date, targetMonth),
+        ...(entry.debtId === undefined ? {} : { debtId: entry.debtId }),
+        kind: entry.kind,
+        label: entry.label,
+        ...(entry.notes === undefined ? {} : { notes: entry.notes }),
+        source: entry.source,
+        sourceKind: entry.sourceKind,
+        status: 'planned',
+      });
+    }, seededMonth);
 }
 
 export function incorporateRecurringQueueItem(month: OperatingMonth, queueItemId: string): OperatingMonth {

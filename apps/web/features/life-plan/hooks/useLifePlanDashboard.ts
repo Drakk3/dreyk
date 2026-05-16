@@ -18,9 +18,9 @@ import {
 } from '../services/operatingEntryMutations';
 import { buildOperatingMonthFromSnapshot } from '../services/operatingMonthAdapter';
 import {
-  buildOperatingMonthFromRecurringTemplates,
+  buildOperatingMonthShell,
   formatOperatingMonthLabel,
-  incorporateRecurringQueueItem,
+  seedOperatingMonthFromPreviousMonth,
   shiftOperatingMonth,
 } from '../services/operatingRecurringQueue';
 import { buildOperatingOverviewModel } from '../services/operatingModelSelectors';
@@ -56,10 +56,10 @@ interface UseLifePlanDashboardResult {
   financialProjection: ReturnType<typeof buildFinancialProjection>;
   handleCreateOperatingEntry: (input: CreateOperatingEntryInput) => void;
   handleHorizonChange: (value: PlanningHorizonMonths) => void;
-  handleIncorporateRecurringQueueItem: (queueItemId: string) => void;
   handleNavigateOperatingMonth: (offset: number) => void;
   handleScenarioChange: (value: PlanningScenarioId) => void;
   handleSelectOperatingMonth: (monthId: string) => void;
+  handleSeedOperatingMonthFromPreviousMonth: () => void;
   handleSelectOperatingWeek: (weekId: string | null) => void;
   handleTransitionOperatingEntryStatus: (
     entryId: string,
@@ -237,7 +237,7 @@ export function useLifePlanDashboard(): UseLifePlanDashboardResult {
 
         return {
           ...currentMonths,
-          [targetMonthId]: buildOperatingMonthFromRecurringTemplates(activeOperatingMonth, targetMonth),
+          [targetMonthId]: buildOperatingMonthShell(activeOperatingMonth, targetMonth),
         };
       });
       dispatchOperatingStore({ monthId: targetMonthId, type: 'setActiveMonth' });
@@ -279,11 +279,21 @@ export function useLifePlanDashboard(): UseLifePlanDashboardResult {
     [activeOperatingMonth],
   );
 
-  const handleIncorporateRecurringQueueItem = useCallback((queueItemId: string): void => {
-    setOperatingMonths((currentMonths) => ({
-      ...currentMonths,
-      [activeOperatingMonth.id]: incorporateRecurringQueueItem(activeOperatingMonth, queueItemId),
-    }));
+  const handleSeedOperatingMonthFromPreviousMonth = useCallback((): void => {
+    const previousMonthId = `operating-month-${shiftOperatingMonth(activeOperatingMonth.month, -1)}`;
+
+    setOperatingMonths((currentMonths) => {
+      const previousMonth = currentMonths[previousMonthId];
+
+      if (previousMonth === undefined) {
+        return currentMonths;
+      }
+
+      return {
+        ...currentMonths,
+        [activeOperatingMonth.id]: seedOperatingMonthFromPreviousMonth(previousMonth, activeOperatingMonth.month),
+      };
+    });
   }, [activeOperatingMonth]);
 
   // 5. Single return object — NEVER return an array from a hook
@@ -295,10 +305,10 @@ export function useLifePlanDashboard(): UseLifePlanDashboardResult {
     financialProjection,
     handleCreateOperatingEntry,
     handleHorizonChange,
-    handleIncorporateRecurringQueueItem,
     handleNavigateOperatingMonth,
     handleScenarioChange,
     handleSelectOperatingMonth,
+    handleSeedOperatingMonthFromPreviousMonth,
     handleSelectOperatingWeek,
     handleTransitionOperatingEntryStatus,
     handleUpdateOperatingEntry,

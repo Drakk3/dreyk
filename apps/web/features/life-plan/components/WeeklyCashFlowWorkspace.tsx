@@ -1,20 +1,23 @@
 'use client';
 
 import * as React from 'react';
+import { ChevronLeft, ChevronRight, Pencil, RotateCcw, Trash2, X } from 'lucide-react';
 
 import { Badge } from '@/components/thegridcn/badge';
 import { DataCard } from '@/components/thegridcn/data-card';
 import { Select } from '@/components/thegridcn/select';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 import type { OperatingMonthOption } from '../hooks/useLifePlanDashboard';
 import type {
   CashFlowWorkspaceWeek,
   CashFlowWorkspaceWeekEvent,
+  OperatingEntry,
   OperatingEntryStatus,
   OperatingMonth,
-  OperatingRecurringQueueItem,
   WeeklyCashFlowWorkspace as WeeklyCashFlowWorkspaceModel,
 } from '../types';
 import type {
@@ -29,9 +32,9 @@ interface WeeklyCashFlowWorkspaceProps {
   availableMonths: OperatingMonthOption[];
   onCreateEntry: (input: CreateOperatingEntryInput) => void;
   onDeleteEntry: (entryId: string) => void;
-  onIncorporateRecurringQueueItem: (queueItemId: string) => void;
   onNavigateMonth: (offset: number) => void;
   onSelectMonth: (monthId: string) => void;
+  onSeedFromPreviousMonth: () => void;
   onSelectWeek: (weekId: string | null) => void;
   onTransitionEntryStatus: (entryId: string, input: TransitionOperatingEntryStatusInput) => void;
   onUpdateEntry: (entryId: string, input: UpdateOperatingEntryInput) => void;
@@ -47,6 +50,13 @@ interface EntryDraftState {
   kind: CreateOperatingEntryInput['kind'];
   label: string;
   notes: string;
+}
+
+interface WeekNavigationState {
+  canGoNext: boolean;
+  canGoPrevious: boolean;
+  nextWeekId: string | null;
+  previousWeekId: string | null;
 }
 
 function createEntryDraft(activeMonth: OperatingMonth): EntryDraftState {
@@ -139,8 +149,41 @@ function getSelectedWeek(weeks: CashFlowWorkspaceWeek[], selectedWeekId: string 
   return weeks.find((week) => week.id === selectedWeekId) ?? weeks[0] ?? null;
 }
 
-function getPendingQueueItems(queueItems: OperatingRecurringQueueItem[]): OperatingRecurringQueueItem[] {
-  return queueItems.filter((queueItem) => queueItem.status === 'pending');
+interface PendingMonthWeekGroup {
+  entries: OperatingEntry[];
+  weekId: string;
+  weekLabel: string;
+}
+
+function getPendingMonthWeekGroups(activeMonth: OperatingMonth): PendingMonthWeekGroup[] {
+  return activeMonth.weeks
+    .map((week) => ({
+      entries: activeMonth.entries.filter((entry) => entry.weekId === week.id && entry.status === 'planned'),
+      weekId: week.id,
+      weekLabel: week.label,
+    }))
+    .filter((group) => group.entries.length > 0);
+}
+
+function getWeekNavigationState(weeks: CashFlowWorkspaceWeek[], selectedWeekId: string | null): WeekNavigationState {
+  const selectedWeek = getSelectedWeek(weeks, selectedWeekId);
+  const selectedWeekIndex = selectedWeek === null ? -1 : weeks.findIndex((week) => week.id === selectedWeek.id);
+
+  if (selectedWeekIndex < 0) {
+    return {
+      canGoNext: false,
+      canGoPrevious: false,
+      nextWeekId: null,
+      previousWeekId: null,
+    };
+  }
+
+  return {
+    canGoNext: selectedWeekIndex < weeks.length - 1,
+    canGoPrevious: selectedWeekIndex > 0,
+    nextWeekId: weeks[selectedWeekIndex + 1]?.id ?? null,
+    previousWeekId: weeks[selectedWeekIndex - 1]?.id ?? null,
+  };
 }
 
 function getEntryCategoryLabel(category: CashFlowWorkspaceWeekEvent['category']): string {
@@ -168,9 +211,9 @@ export function WeeklyCashFlowWorkspace({
   availableMonths,
   onCreateEntry,
   onDeleteEntry,
-  onIncorporateRecurringQueueItem,
   onNavigateMonth,
   onSelectMonth,
+  onSeedFromPreviousMonth,
   onSelectWeek,
   onTransitionEntryStatus,
   onUpdateEntry,
@@ -180,14 +223,23 @@ export function WeeklyCashFlowWorkspace({
   const [draft, setDraft] = React.useState<EntryDraftState>(() => createEntryDraft(activeMonth));
   const [editingEntryId, setEditingEntryId] = React.useState<string | null>(null);
   const [editingDraft, setEditingDraft] = React.useState<EntryDraftState | null>(null);
+  const [isQueueExpanded, setIsQueueExpanded] = React.useState<boolean>(true);
+  const [isManualEntryOpen, setIsManualEntryOpen] = React.useState<boolean>(false);
   const selectedWeek = React.useMemo(() => getSelectedWeek(workspace.weeks, selectedWeekId), [selectedWeekId, workspace.weeks]);
-  const pendingQueueItems = React.useMemo(() => getPendingQueueItems(activeMonth.recurringQueue), [activeMonth.recurringQueue]);
+  const pendingMonthWeekGroups = React.useMemo(() => getPendingMonthWeekGroups(activeMonth), [activeMonth]);
+  const weekNavigation = React.useMemo(
+    () => getWeekNavigationState(workspace.weeks, selectedWeekId),
+    [selectedWeekId, workspace.weeks],
+  );
+  const isMonthEmpty = activeMonth.entries.length === 0;
 
   React.useEffect(() => {
     setDraft(createEntryDraft(activeMonth));
     setEditingEntryId(null);
     setEditingDraft(null);
-  }, [activeMonth]);
+    setIsManualEntryOpen(false);
+    setIsQueueExpanded(pendingMonthWeekGroups.length > 0 || isMonthEmpty);
+  }, [activeMonth, isMonthEmpty, pendingMonthWeekGroups.length]);
 
   const handleDraftChange = React.useCallback(<TKey extends keyof EntryDraftState>(key: TKey, value: EntryDraftState[TKey]): void => {
     setDraft((currentDraft) => ({
@@ -248,7 +300,11 @@ export function WeeklyCashFlowWorkspace({
                 value={formatLifePlanCurrency(workspace.summary.totalOutflow, workspace.summary.currencyCode)}
                 valueClassName={renderSummaryValue(workspace.summary.totalOutflow, 'danger')}
               />
-              <SummaryTile label="Pending recurring" value={String(pendingQueueItems.length)} valueClassName="text-foreground" />
+              <SummaryTile
+                label="Pending items"
+                value={String(pendingMonthWeekGroups.reduce((sum, group) => sum + group.entries.length, 0))}
+                valueClassName="text-foreground"
+              />
             </div>
 
             <div className="space-y-2">
@@ -280,98 +336,189 @@ export function WeeklyCashFlowWorkspace({
           </div>
         </DataCard>
 
-        <DataCard subtitle="RECURRING QUEUE" title="Generated items waiting for incorporation" headerRight={<Badge variant="outline">{pendingQueueItems.length} pending</Badge>}>
-          <div className="space-y-3 p-4">
-            {activeMonth.recurringQueue.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No recurring items exist for this month.</p>
+        <DataCard
+          subtitle="MONTH ITEMS"
+          title="Pending items this month"
+          headerRight={
+            <div className="flex items-center gap-2">
+              <Badge variant="outline">{pendingMonthWeekGroups.reduce((sum, group) => sum + group.entries.length, 0)} pending</Badge>
+              <Button type="button" size="sm" onClick={() => setIsManualEntryOpen(true)}>
+                Add cash-flow item
+              </Button>
+            </div>
+          }
+        >
+          <div className="p-4">
+            {isMonthEmpty ? (
+              <div className="rounded border border-dashed border-border/60 bg-background/20 p-4">
+                <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/40">Empty month</div>
+                <p className="mt-2 text-sm text-muted-foreground">This month has no items yet. Start with items from the previous month or add entries manually.</p>
+                <Button className="mt-3" type="button" onClick={onSeedFromPreviousMonth}>
+                  Start with items from previous month
+                </Button>
+              </div>
+            ) : pendingMonthWeekGroups.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No pending items remain for this month.</p>
             ) : (
-              activeMonth.recurringQueue.map((queueItem) => {
-                const isPending = queueItem.status === 'pending';
-
-                return (
-                  <div key={queueItem.id} className="rounded border border-border/60 bg-background/30 p-3">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div>
-                        <div className="text-sm font-semibold text-foreground">{queueItem.label}</div>
-                        <div className="mt-1 text-xs text-muted-foreground">
-                          {queueItem.scheduledDate} · {formatLifePlanCurrency(queueItem.amountUsd, 'USD')} · {queueItem.cadence}
-                        </div>
+              <Accordion type="single" collapsible value={isQueueExpanded ? 'recurring-queue' : ''} onValueChange={(value) => setIsQueueExpanded(value === 'recurring-queue')}>
+                <AccordionItem value="recurring-queue" className="rounded border border-border/60 bg-background/30 px-3">
+                  <AccordionTrigger className="py-3 hover:no-underline">
+                    <div className="space-y-1">
+                      <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/50">Queue summary</div>
+                      <div className="text-sm font-semibold text-foreground">{pendingMonthWeekGroups.reduce((sum, group) => sum + group.entries.length, 0)} pending items this month</div>
+                      <div className="text-xs text-muted-foreground">
+                        Expand for compact weekly rows.
                       </div>
-                      <Badge variant={isPending ? 'warning' : 'success'}>{queueItem.status}</Badge>
                     </div>
-                    {queueItem.notes !== undefined ? <p className="mt-2 text-xs text-muted-foreground">{queueItem.notes}</p> : null}
-                    {isPending ? (
-                      <Button className="mt-3" type="button" size="sm" onClick={() => onIncorporateRecurringQueueItem(queueItem.id)}>
-                        Incorporate into month
-                      </Button>
-                    ) : null}
-                  </div>
-                );
-              })
+                  </AccordionTrigger>
+                  <AccordionContent className="pb-3">
+                    <div className="divide-y divide-border/60 border-t border-border/60 pt-3">
+                      {pendingMonthWeekGroups.map((group) => (
+                        <div key={group.weekId} className="py-3">
+                          <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/40">{group.weekLabel}</div>
+                          <div className="space-y-1.5">
+                            {group.entries.map((entry) => (
+                              <div key={entry.id} className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
+                                <div className="min-w-0 flex-1">
+                                  <span>{entry.date}</span>
+                                  <span className="mx-1.5 text-foreground/30">·</span>
+                                  <span className="font-medium text-foreground">{entry.label}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="warning">pending</Badge>
+                                  <span>{formatLifePlanCurrency(entry.amountUsd, 'USD')}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             )}
           </div>
         </DataCard>
       </div>
 
-      <DataCard subtitle="MANUAL ENTRY" title="Add cash-flow item">
-        <div className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-6">
-          <Input value={draft.label} placeholder="Label" onChange={(event) => handleDraftChange('label', event.currentTarget.value)} />
-          <Input value={draft.date} type="date" onChange={(event) => handleDraftChange('date', event.currentTarget.value)} />
-          <Input value={draft.amountUsd} type="number" step="0.01" placeholder="Amount USD" onChange={(event) => handleDraftChange('amountUsd', event.currentTarget.value)} />
-          <Select
-            options={ENTRY_KIND_OPTIONS}
-            value={draft.kind}
-            onChange={(value) => {
-              if (isEntryKind(value)) {
-                handleDraftChange('kind', value);
-              }
-            }}
-          />
-          <Select
-            options={ENTRY_CATEGORY_OPTIONS}
-            value={draft.category}
-            onChange={(value) => {
-              if (isEntryCategory(value)) {
-                handleDraftChange('category', value);
-              }
-            }}
-          />
-          <Select
-            options={ENTRY_CONFIDENCE_OPTIONS}
-            value={draft.confidence}
-            onChange={(value) => {
-              if (isEntryConfidence(value)) {
-                handleDraftChange('confidence', value);
-              }
-            }}
-          />
-          <div className="md:col-span-2 xl:col-span-5">
-            <Input value={draft.notes} placeholder="Notes (optional)" onChange={(event) => handleDraftChange('notes', event.currentTarget.value)} />
-          </div>
-          <div className="flex items-end">
-            <Button
-              type="button"
-              className="w-full"
-              onClick={() => {
-                const entryInput = buildEntryInput(draft, 'Life plan manual entry');
+      {isManualEntryOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="w-full max-w-4xl rounded border border-border/70 bg-background shadow-2xl">
+            <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
+              <div>
+                <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/40">Manual entry</div>
+                <h2 className="mt-1 text-lg font-semibold uppercase tracking-[0.12em] text-foreground">Add cash-flow item</h2>
+              </div>
+              <Button type="button" size="icon-sm" variant="ghost" onClick={() => setIsManualEntryOpen(false)}>
+                <X />
+                <span className="sr-only">Close manual entry modal</span>
+              </Button>
+            </div>
 
-                if (entryInput !== null) {
-                  onCreateEntry(entryInput);
-                  setDraft(createEntryDraft(activeMonth));
-                }
-              }}
-            >
-              Add entry
-            </Button>
+            <div className="grid gap-4 p-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] xl:items-start">
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-2">
+                <Input value={draft.label} placeholder="Label" onChange={(event) => handleDraftChange('label', event.currentTarget.value)} />
+                <Input value={draft.date} type="date" onChange={(event) => handleDraftChange('date', event.currentTarget.value)} />
+                <Input value={draft.amountUsd} type="number" step="0.01" placeholder="Amount USD" onChange={(event) => handleDraftChange('amountUsd', event.currentTarget.value)} />
+                <Select
+                  options={ENTRY_KIND_OPTIONS}
+                  value={draft.kind}
+                  onChange={(value) => {
+                    if (isEntryKind(value)) {
+                      handleDraftChange('kind', value);
+                    }
+                  }}
+                />
+                <div className="md:col-span-2">
+                  <Select
+                    options={ENTRY_CONFIDENCE_OPTIONS}
+                    value={draft.confidence}
+                    onChange={(value) => {
+                      if (isEntryConfidence(value)) {
+                        handleDraftChange('confidence', value);
+                      }
+                    }}
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Input value={draft.notes} placeholder="Notes (optional)" onChange={(event) => handleDraftChange('notes', event.currentTarget.value)} />
+                </div>
+              </div>
+              <div className="space-y-3">
+                <Select
+                  label="Category"
+                  options={ENTRY_CATEGORY_OPTIONS}
+                  value={draft.category}
+                  onChange={(value) => {
+                    if (isEntryCategory(value)) {
+                      handleDraftChange('category', value);
+                    }
+                  }}
+                />
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    type="button"
+                    className="flex-1"
+                    onClick={() => {
+                      const entryInput = buildEntryInput(draft, 'Life plan manual entry');
+
+                      if (entryInput !== null) {
+                        onCreateEntry(entryInput);
+                        setDraft(createEntryDraft(activeMonth));
+                        setIsManualEntryOpen(false);
+                      }
+                    }}
+                  >
+                    Add entry
+                  </Button>
+                  <Button type="button" variant="outline" onClick={() => setIsManualEntryOpen(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </DataCard>
+      ) : null}
 
       {selectedWeek === null ? null : (
         <DataCard
           subtitle="WEEK DETAIL"
           title={selectedWeek.label}
-          headerRight={selectedWeek.reviewItemCount > 0 ? <Badge variant="warning">{selectedWeek.reviewItemCount} review</Badge> : undefined}
+          headerRight={
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                size="icon-sm"
+                variant="outline"
+                disabled={!weekNavigation.canGoPrevious}
+                onClick={() => {
+                  if (weekNavigation.previousWeekId !== null) {
+                    onSelectWeek(weekNavigation.previousWeekId);
+                  }
+                }}
+              >
+                <ChevronLeft />
+                <span className="sr-only">Previous week</span>
+              </Button>
+              <Button
+                type="button"
+                size="icon-sm"
+                variant="outline"
+                disabled={!weekNavigation.canGoNext}
+                onClick={() => {
+                  if (weekNavigation.nextWeekId !== null) {
+                    onSelectWeek(weekNavigation.nextWeekId);
+                  }
+                }}
+              >
+                <ChevronRight />
+                <span className="sr-only">Next week</span>
+              </Button>
+              {selectedWeek.reviewItemCount > 0 ? <Badge variant="warning">{selectedWeek.reviewItemCount} review</Badge> : null}
+            </div>
+          }
         >
           <div className="space-y-4 p-4">
             <div className="grid gap-3 md:grid-cols-4">
@@ -381,7 +528,7 @@ export function WeeklyCashFlowWorkspace({
               <SummaryTile label="Ending" value={formatLifePlanCurrency(selectedWeek.endingBalance, workspace.currencyCode)} valueClassName="text-primary" />
             </div>
 
-            <div className="space-y-3">
+            <div className="grid gap-3 xl:grid-cols-2">
               {selectedWeek.events.map((event) => {
                 const isEditing = editingEntryId === event.id && editingDraft !== null;
 
@@ -392,7 +539,7 @@ export function WeeklyCashFlowWorkspace({
                       event.kind === 'income'
                         ? 'border-emerald-500/30 bg-emerald-500/5'
                         : 'border-border/60 bg-background/30'
-                    }`}
+                    } ${isEditing ? 'xl:col-span-2' : 'xl:col-span-1'}`}
                   >
                     {isEditing ? (
                       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
@@ -431,56 +578,88 @@ export function WeeklyCashFlowWorkspace({
                       </div>
                     ) : (
                       <>
-                        <div className="flex flex-wrap items-start justify-between gap-3">
-                          <div>
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className="text-sm font-semibold text-foreground">{event.label}</span>
-                              <Badge variant={getStatusVariant(event.status)}>{event.status}</Badge>
-                              <Badge variant="outline">{event.kind}</Badge>
-                              {event.kind === 'income' ? <Badge variant="success">Weekly divider</Badge> : null}
-                            </div>
-                            <div className="mt-1 text-xs text-muted-foreground">
-                              {event.date} · {getEntryCategoryLabel(event.category)} · {getEntryConfidenceLabel(event.confidence)}
-                            </div>
-                            {event.notes !== undefined ? <p className="mt-1 text-xs text-muted-foreground">{event.notes}</p> : null}
-                          </div>
-                          <div className="text-right text-sm font-semibold text-foreground">
-                            {event.direction === 'inflow' ? '+' : '-'}
-                            {formatLifePlanCurrency(event.amount, event.currencyCode)}
-                          </div>
-                        </div>
-
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          {ENTRY_STATUS_OPTIONS.map((status) => (
-                            <Button
-                              key={`${event.id}-${status}`}
-                              type="button"
-                              size="sm"
-                              variant={event.status === status ? 'default' : 'outline'}
-                              onClick={() =>
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex min-w-0 flex-1 gap-3">
+                            <Checkbox
+                              checked={event.status === 'done'}
+                              className="mt-0.5"
+                              onCheckedChange={(checked) => {
                                 onTransitionEntryStatus(event.id, {
                                   changedAt: new Date().toISOString(),
-                                  nextStatus: status,
-                                })
-                              }
-                            >
-                              {status}
-                            </Button>
-                          ))}
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setEditingEntryId(event.id);
-                              setEditingDraft(createDraftFromEvent(event));
-                            }}
-                          >
-                            Edit
-                          </Button>
-                          <Button type="button" size="sm" variant="destructive" onClick={() => onDeleteEntry(event.id)}>
-                            Delete
-                          </Button>
+                                  nextStatus: checked === true ? 'done' : 'planned',
+                                });
+                              }}
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="text-sm font-semibold text-foreground">{event.label}</span>
+                                <Badge variant={getStatusVariant(event.status)}>{event.status}</Badge>
+                                <Badge variant="outline">{event.kind}</Badge>
+                                {event.kind === 'income' ? <Badge variant="success">Weekly divider</Badge> : null}
+                              </div>
+                              <div className="mt-1 text-xs text-muted-foreground">
+                                {event.date} · {getEntryCategoryLabel(event.category)} · {getEntryConfidenceLabel(event.confidence)}
+                              </div>
+                              {event.notes !== undefined ? <p className="mt-1 text-xs text-muted-foreground">{event.notes}</p> : null}
+                              <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                                {event.status !== 'skipped' ? (
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-7 px-2 text-xs"
+                                    onClick={() =>
+                                      onTransitionEntryStatus(event.id, {
+                                        changedAt: new Date().toISOString(),
+                                        nextStatus: 'skipped',
+                                      })
+                                    }
+                                  >
+                                    Skip
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-7 px-2 text-xs"
+                                    onClick={() =>
+                                      onTransitionEntryStatus(event.id, {
+                                        changedAt: new Date().toISOString(),
+                                        nextStatus: 'planned',
+                                      })
+                                    }
+                                  >
+                                    <RotateCcw />
+                                    Reset
+                                  </Button>
+                                )}
+                                <Button
+                                  type="button"
+                                  size="icon-sm"
+                                  variant="ghost"
+                                  onClick={() => {
+                                    setEditingEntryId(event.id);
+                                    setEditingDraft(createDraftFromEvent(event));
+                                  }}
+                                >
+                                  <Pencil />
+                                  <span className="sr-only">Edit item</span>
+                                </Button>
+                                <Button type="button" size="icon-sm" variant="ghost" onClick={() => onDeleteEntry(event.id)}>
+                                  <Trash2 />
+                                  <span className="sr-only">Delete item</span>
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right text-sm font-semibold text-foreground">
+                            <div>
+                              {event.direction === 'inflow' ? '+' : '-'}
+                              {formatLifePlanCurrency(event.amount, event.currencyCode)}
+                            </div>
+                            {event.status === 'skipped' ? <div className="mt-1 text-xs font-normal text-muted-foreground">Skipped</div> : null}
+                          </div>
                         </div>
                       </>
                     )}
@@ -510,13 +689,13 @@ function SummaryTile({ label, value, valueClassName }: SummaryTileProps): JSX.El
   );
 }
 
-const ENTRY_KIND_OPTIONS = [
+const ENTRY_KIND_OPTIONS: Array<{ label: string; value: CreateOperatingEntryInput['kind'] }> = [
   { label: 'Expense', value: 'expense' },
   { label: 'Income', value: 'income' },
   { label: 'Debt', value: 'debt' },
 ];
 
-const ENTRY_CATEGORY_OPTIONS = [
+const ENTRY_CATEGORY_OPTIONS: Array<{ label: string; value: CreateOperatingEntryInput['category'] }> = [
   { label: 'Debt payment', value: 'debtPayment' },
   { label: 'Family support', value: 'familySupport' },
   { label: 'Food and fuel', value: 'foodAndFuel' },
@@ -529,13 +708,11 @@ const ENTRY_CATEGORY_OPTIONS = [
   { label: 'Other', value: 'other' },
 ];
 
-const ENTRY_CONFIDENCE_OPTIONS = [
+const ENTRY_CONFIDENCE_OPTIONS: Array<{ label: string; value: CreateOperatingEntryInput['confidence'] }> = [
   { label: 'Verified', value: 'verified' },
   { label: 'Estimated', value: 'estimated' },
   { label: 'Needs review', value: 'needsReview' },
 ];
-
-const ENTRY_STATUS_OPTIONS: OperatingEntryStatus[] = ['planned', 'done', 'skipped'];
 
 function isEntryKind(value: string): value is CreateOperatingEntryInput['kind'] {
   return value === 'expense' || value === 'income' || value === 'debt';

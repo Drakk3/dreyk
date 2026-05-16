@@ -47,9 +47,9 @@ export function LifePlanDashboard({ initialSection, profile, role }: LifePlanDas
     cashFlowWorkspace,
     handleCreateOperatingEntry,
     handleHorizonChange,
-    handleIncorporateRecurringQueueItem,
     handleNavigateOperatingMonth,
     handleSelectOperatingMonth,
+    handleSeedOperatingMonthFromPreviousMonth,
     handleSelectOperatingWeek,
     handleTransitionOperatingEntryStatus,
     handleUpdateOperatingEntry,
@@ -193,9 +193,9 @@ export function LifePlanDashboard({ initialSection, profile, role }: LifePlanDas
                 availableMonths={availableOperatingMonths}
                 onCreateEntry={handleCreateOperatingEntry}
                 onDeleteEntry={handleDeleteOperatingEntry}
-                onIncorporateRecurringQueueItem={handleIncorporateRecurringQueueItem}
                 onNavigateMonth={handleNavigateOperatingMonth}
                 onSelectMonth={handleSelectOperatingMonth}
+                onSeedFromPreviousMonth={handleSeedOperatingMonthFromPreviousMonth}
                 onSelectWeek={handleSelectOperatingWeek}
                 onTransitionEntryStatus={handleTransitionOperatingEntryStatus}
                 onUpdateEntry={handleUpdateOperatingEntry}
