@@ -28,6 +28,7 @@ Apply migrations in numeric order:
 
 - `0011_life_plan_operating.sql` adds the month ledger, entries, status history, debt accounts, debt payment events, and recurring templates.
 - `0012_life_plan_operating_rls.sql` locks every life-plan row to `owner_user_id = auth.uid()`.
+- `smoke/life_plan_operating.sql` is the local post-reset smoke verification for schema presence, RLS enablement, owner-only access, and same-owner/cross-owner FK behavior.
 - The first remote month is bootstrapped from the May 2026 snapshot in the web feature.
 - Future recurring pay stays DERIVED from recurring templates plus month entries; there is no separate persisted recurring-queue table.
 
@@ -38,6 +39,9 @@ Apply migrations in numeric order:
 1. Install the Supabase CLI.
 2. Run `supabase start`.
 3. Run `supabase db reset` to apply all migrations plus `seed.sql`.
+4. Run `npm run smoke:life-plan-sql` to verify the life-plan tables, RLS, and owner-coupled foreign keys.
+
+The smoke script uses `psql` against the local Supabase Postgres instance, impersonates two deterministic local authenticated users entirely inside one transaction, raises on the first failed check, and ends with `ROLLBACK` so it does not leave fixtures behind.
 
 ### Remote project setup
 
