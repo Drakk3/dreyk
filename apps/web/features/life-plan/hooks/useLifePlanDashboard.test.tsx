@@ -147,7 +147,7 @@ describe('useLifePlanDashboard', () => {
     const existingMonth = createBaseMonth();
     const createdEntryMonth = createOperatingEntry(existingMonth, {
       amountUsd: 35,
-      category: 'foodAndFuel',
+      category: 'food',
       confidence: 'verified',
       date: '2026-05-16',
       kind: 'expense',
@@ -174,7 +174,7 @@ describe('useLifePlanDashboard', () => {
     act(() => {
       result.current.handleCreateOperatingEntry({
         amountUsd: 35,
-        category: 'foodAndFuel',
+        category: 'food',
         confidence: 'verified',
         date: '2026-05-16',
         kind: 'expense',

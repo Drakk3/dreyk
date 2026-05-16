@@ -13,10 +13,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 
 import type { OperatingMonthOption } from '../hooks/useLifePlanDashboard';
 import type {
-  CashFlowWorkspaceWeek,
   CashFlowWorkspaceWeekEvent,
-  OperatingEntry,
-  OperatingEntryStatus,
   OperatingMonth,
   WeeklyCashFlowWorkspace as WeeklyCashFlowWorkspaceModel,
 } from '../types';
@@ -26,6 +23,19 @@ import type {
   UpdateOperatingEntryInput,
 } from '../services/operatingEntryMutations';
 import { formatLifePlanCurrency } from '../services/lifePlanCurrency';
+import {
+  buildCopiedEntryInput,
+  buildEntryInput,
+  buildUpdateInput,
+  createDraftFromEvent,
+  createEntryDraft,
+  getMonthWeekGroups,
+  getPendingItemCount,
+  getSelectedWeek,
+  getStatusVariant,
+  getWeekNavigationState,
+  type EntryDraftState,
+} from '../services/weeklyCashFlowWorkspaceView';
 
 interface WeeklyCashFlowWorkspaceProps {
   activeMonth: OperatingMonth;
@@ -42,149 +52,7 @@ interface WeeklyCashFlowWorkspaceProps {
   workspace: WeeklyCashFlowWorkspaceModel;
 }
 
-interface EntryDraftState {
-  amountUsd: string;
-  category: CreateOperatingEntryInput['category'];
-  confidence: CreateOperatingEntryInput['confidence'];
-  date: string;
-  kind: CreateOperatingEntryInput['kind'];
-  label: string;
-  notes: string;
-}
-
-interface WeekNavigationState {
-  canGoNext: boolean;
-  canGoPrevious: boolean;
-  nextWeekId: string | null;
-  previousWeekId: string | null;
-}
-
-function createEntryDraft(activeMonth: OperatingMonth): EntryDraftState {
-  return {
-    amountUsd: '',
-    category: 'other',
-    confidence: 'verified',
-    date: activeMonth.weeks[0]?.startDate ?? `${activeMonth.month}-01`,
-    kind: 'expense',
-    label: '',
-    notes: '',
-  };
-}
-
-function buildEntryInput(
-  draft: EntryDraftState,
-  sourceLabel: string,
-): CreateOperatingEntryInput | null {
-  const amountUsd = Number(draft.amountUsd);
-
-  if (draft.label.trim() === '' || draft.date === '' || Number.isNaN(amountUsd)) {
-    return null;
-  }
-
-  return {
-    amountUsd,
-    category: draft.category,
-    confidence: draft.confidence,
-    date: draft.date,
-    kind: draft.kind,
-    label: draft.label.trim(),
-    ...(draft.notes.trim() === '' ? {} : { notes: draft.notes.trim() }),
-    source: {
-      capturedOn: new Date().toISOString().slice(0, 10),
-      kind: 'manual',
-      label: sourceLabel,
-    },
-    sourceKind: 'manual',
-    status: 'planned',
-  };
-}
-
-function buildUpdateInput(draft: EntryDraftState): UpdateOperatingEntryInput | null {
-  const amountUsd = Number(draft.amountUsd);
-
-  if (draft.label.trim() === '' || draft.date === '' || Number.isNaN(amountUsd)) {
-    return null;
-  }
-
-  return {
-    amountUsd,
-    category: draft.category,
-    confidence: draft.confidence,
-    date: draft.date,
-    kind: draft.kind,
-    label: draft.label.trim(),
-    ...(draft.notes.trim() === '' ? {} : { notes: draft.notes.trim() }),
-  };
-}
-
-function createDraftFromEvent(event: CashFlowWorkspaceWeekEvent): EntryDraftState {
-  return {
-    amountUsd: String(event.amount),
-    category: event.category,
-    confidence: event.confidence,
-    date: event.date,
-    kind: event.kind,
-    label: event.label,
-    notes: event.notes ?? '',
-  };
-}
-
-function getStatusVariant(status: OperatingEntryStatus): 'default' | 'outline' | 'warning' {
-  if (status === 'done') {
-    return 'default';
-  }
-
-  if (status === 'skipped') {
-    return 'warning';
-  }
-
-  return 'outline';
-}
-
-function getSelectedWeek(weeks: CashFlowWorkspaceWeek[], selectedWeekId: string | null): CashFlowWorkspaceWeek | null {
-  if (selectedWeekId === null) {
-    return weeks[0] ?? null;
-  }
-
-  return weeks.find((week) => week.id === selectedWeekId) ?? weeks[0] ?? null;
-}
-
-interface PendingMonthWeekGroup {
-  entries: OperatingEntry[];
-  weekId: string;
-  weekLabel: string;
-}
-
-function getPendingMonthWeekGroups(activeMonth: OperatingMonth): PendingMonthWeekGroup[] {
-  return activeMonth.weeks
-    .map((week) => ({
-      entries: activeMonth.entries.filter((entry) => entry.weekId === week.id && entry.status === 'planned'),
-      weekId: week.id,
-      weekLabel: week.label,
-    }))
-    .filter((group) => group.entries.length > 0);
-}
-
-function getWeekNavigationState(weeks: CashFlowWorkspaceWeek[], selectedWeekId: string | null): WeekNavigationState {
-  const selectedWeek = getSelectedWeek(weeks, selectedWeekId);
-  const selectedWeekIndex = selectedWeek === null ? -1 : weeks.findIndex((week) => week.id === selectedWeek.id);
-
-  if (selectedWeekIndex < 0) {
-    return {
-      canGoNext: false,
-      canGoPrevious: false,
-      nextWeekId: null,
-      previousWeekId: null,
-    };
-  }
-
-  return {
-    canGoNext: selectedWeekIndex < weeks.length - 1,
-    canGoPrevious: selectedWeekIndex > 0,
-    nextWeekId: weeks[selectedWeekIndex + 1]?.id ?? null,
-    previousWeekId: weeks[selectedWeekIndex - 1]?.id ?? null,
-  };
-}
+type ManualEntryMode = 'copy' | 'create';
 
 function getEntryCategoryLabel(category: CashFlowWorkspaceWeekEvent['category']): string {
   return ENTRY_CATEGORY_OPTIONS.find((option) => option.value === category)?.label ?? category;
@@ -225,8 +93,17 @@ export function WeeklyCashFlowWorkspace({
   const [editingDraft, setEditingDraft] = React.useState<EntryDraftState | null>(null);
   const [isQueueExpanded, setIsQueueExpanded] = React.useState<boolean>(true);
   const [isManualEntryOpen, setIsManualEntryOpen] = React.useState<boolean>(false);
+  const [manualEntryMode, setManualEntryMode] = React.useState<ManualEntryMode>('create');
+  const [copySourceEntryId, setCopySourceEntryId] = React.useState<string>('');
   const selectedWeek = React.useMemo(() => getSelectedWeek(workspace.weeks, selectedWeekId), [selectedWeekId, workspace.weeks]);
-  const pendingMonthWeekGroups = React.useMemo(() => getPendingMonthWeekGroups(activeMonth), [activeMonth]);
+  const monthWeekGroups = React.useMemo(() => getMonthWeekGroups(activeMonth), [activeMonth]);
+  const pendingItemCount = React.useMemo(() => getPendingItemCount(activeMonth.entries), [activeMonth.entries]);
+  const copyableMonthItemOptions = React.useMemo(() => {
+    return activeMonth.entries.map((entry) => ({
+      label: entry.label,
+      value: entry.id,
+    }));
+  }, [activeMonth.entries]);
   const weekNavigation = React.useMemo(
     () => getWeekNavigationState(workspace.weeks, selectedWeekId),
     [selectedWeekId, workspace.weeks],
@@ -238,8 +115,17 @@ export function WeeklyCashFlowWorkspace({
     setEditingEntryId(null);
     setEditingDraft(null);
     setIsManualEntryOpen(false);
-    setIsQueueExpanded(pendingMonthWeekGroups.length > 0 || isMonthEmpty);
-  }, [activeMonth, isMonthEmpty, pendingMonthWeekGroups.length]);
+    setManualEntryMode('create');
+    setCopySourceEntryId('');
+    setIsQueueExpanded(monthWeekGroups.length > 0 || isMonthEmpty);
+  }, [activeMonth, isMonthEmpty, monthWeekGroups.length]);
+
+  const handleResetManualEntryModal = React.useCallback((): void => {
+    setDraft(createEntryDraft(activeMonth));
+    setManualEntryMode('create');
+    setCopySourceEntryId('');
+    setIsManualEntryOpen(false);
+  }, [activeMonth]);
 
   const handleDraftChange = React.useCallback(<TKey extends keyof EntryDraftState>(key: TKey, value: EntryDraftState[TKey]): void => {
     setDraft((currentDraft) => ({
@@ -302,7 +188,7 @@ export function WeeklyCashFlowWorkspace({
               />
               <SummaryTile
                 label="Pending items"
-                value={String(pendingMonthWeekGroups.reduce((sum, group) => sum + group.entries.length, 0))}
+                value={String(pendingItemCount)}
                 valueClassName="text-foreground"
               />
             </div>
@@ -338,10 +224,10 @@ export function WeeklyCashFlowWorkspace({
 
         <DataCard
           subtitle="MONTH ITEMS"
-          title="Pending items this month"
+          title="All items this month"
           headerRight={
             <div className="flex items-center gap-2">
-              <Badge variant="outline">{pendingMonthWeekGroups.reduce((sum, group) => sum + group.entries.length, 0)} pending</Badge>
+              <Badge variant="outline">{pendingItemCount} pending</Badge>
               <Button type="button" size="sm" onClick={() => setIsManualEntryOpen(true)}>
                 Add cash-flow item
               </Button>
@@ -357,23 +243,23 @@ export function WeeklyCashFlowWorkspace({
                   Start with items from previous month
                 </Button>
               </div>
-            ) : pendingMonthWeekGroups.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No pending items remain for this month.</p>
+            ) : monthWeekGroups.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No items exist for this month yet.</p>
             ) : (
               <Accordion type="single" collapsible value={isQueueExpanded ? 'recurring-queue' : ''} onValueChange={(value) => setIsQueueExpanded(value === 'recurring-queue')}>
                 <AccordionItem value="recurring-queue" className="rounded border border-border/60 bg-background/30 px-3">
                   <AccordionTrigger className="py-3 hover:no-underline">
                     <div className="space-y-1">
                       <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/50">Queue summary</div>
-                      <div className="text-sm font-semibold text-foreground">{pendingMonthWeekGroups.reduce((sum, group) => sum + group.entries.length, 0)} pending items this month</div>
+                      <div className="text-sm font-semibold text-foreground">{activeMonth.entries.length} items across weekly groups</div>
                       <div className="text-xs text-muted-foreground">
-                        Expand for compact weekly rows.
+                        Expand for compact weekly rows with status.
                       </div>
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="pb-3">
                     <div className="divide-y divide-border/60 border-t border-border/60 pt-3">
-                      {pendingMonthWeekGroups.map((group) => (
+                      {monthWeekGroups.map((group) => (
                         <div key={group.weekId} className="py-3">
                           <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/40">{group.weekLabel}</div>
                           <div className="space-y-1.5">
@@ -385,8 +271,8 @@ export function WeeklyCashFlowWorkspace({
                                   <span className="font-medium text-foreground">{entry.label}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <Badge variant="warning">pending</Badge>
-                                  <span>{formatLifePlanCurrency(entry.amountUsd, 'USD')}</span>
+                                  <Badge variant={getStatusVariant(entry.status)}>{entry.status}</Badge>
+                                  <span>{formatLifePlanCurrency(entry.amountUsd, activeMonth.currencyCode)}</span>
                                 </div>
                               </div>
                             ))}
@@ -403,80 +289,127 @@ export function WeeklyCashFlowWorkspace({
       </div>
 
       {isManualEntryOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-4xl rounded border border-border/70 bg-background shadow-2xl">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/70 p-4 sm:flex sm:items-center sm:justify-center">
+          <div className="mx-auto my-6 w-full max-w-4xl rounded border border-border/70 bg-background shadow-2xl sm:my-0">
             <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
               <div>
-                <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/40">Manual entry</div>
+                <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/40">Item action</div>
                 <h2 className="mt-1 text-lg font-semibold uppercase tracking-[0.12em] text-foreground">Add cash-flow item</h2>
               </div>
-              <Button type="button" size="icon-sm" variant="ghost" onClick={() => setIsManualEntryOpen(false)}>
+              <Button type="button" size="icon-sm" variant="ghost" onClick={handleResetManualEntryModal}>
                 <X />
                 <span className="sr-only">Close manual entry modal</span>
               </Button>
             </div>
 
-            <div className="grid gap-4 p-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] xl:items-start">
+            <div className="p-4 max-sm:max-h-[calc(100vh-8rem)] max-sm:overflow-y-auto">
+              <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] xl:items-start">
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-2">
-                <Input value={draft.label} placeholder="Label" onChange={(event) => handleDraftChange('label', event.currentTarget.value)} />
-                <Input value={draft.date} type="date" onChange={(event) => handleDraftChange('date', event.currentTarget.value)} />
-                <Input value={draft.amountUsd} type="number" step="0.01" placeholder="Amount USD" onChange={(event) => handleDraftChange('amountUsd', event.currentTarget.value)} />
                 <Select
-                  options={ENTRY_KIND_OPTIONS}
-                  value={draft.kind}
+                  label="Mode"
+                  options={MANUAL_ENTRY_MODE_OPTIONS}
+                  value={manualEntryMode}
                   onChange={(value) => {
-                    if (isEntryKind(value)) {
-                      handleDraftChange('kind', value);
+                    if (isManualEntryMode(value)) {
+                      setManualEntryMode(value);
+                      setCopySourceEntryId('');
                     }
                   }}
                 />
-                <div className="md:col-span-2">
+                {manualEntryMode === 'copy' ? (
                   <Select
-                    options={ENTRY_CONFIDENCE_OPTIONS}
-                    value={draft.confidence}
+                    label="Item name"
+                    options={copyableMonthItemOptions}
+                    value={copySourceEntryId}
+                    placeholder={copyableMonthItemOptions.length === 0 ? 'No items available' : 'Select item name'}
+                    disabled={copyableMonthItemOptions.length === 0}
                     onChange={(value) => {
-                      if (isEntryConfidence(value)) {
-                        handleDraftChange('confidence', value);
+                      const sourceEntry = activeMonth.entries.find((entry) => entry.id === value);
+
+                      setCopySourceEntryId(value);
+
+                      if (sourceEntry !== undefined) {
+                        onCreateEntry(buildCopiedEntryInput(sourceEntry));
+                        handleResetManualEntryModal();
                       }
                     }}
                   />
-                </div>
-                <div className="md:col-span-2">
-                  <Input value={draft.notes} placeholder="Notes (optional)" onChange={(event) => handleDraftChange('notes', event.currentTarget.value)} />
-                </div>
+                ) : (
+                  <>
+                    <Input value={draft.label} placeholder="Label" onChange={(event) => handleDraftChange('label', event.currentTarget.value)} />
+                    <Input value={draft.date} type="date" onChange={(event) => handleDraftChange('date', event.currentTarget.value)} />
+                    <Input value={draft.amountUsd} type="number" step="0.01" placeholder="Amount USD" onChange={(event) => handleDraftChange('amountUsd', event.currentTarget.value)} />
+                    <Select
+                      options={ENTRY_KIND_OPTIONS}
+                      value={draft.kind}
+                      onChange={(value) => {
+                        if (isEntryKind(value)) {
+                          handleDraftChange('kind', value);
+                        }
+                      }}
+                    />
+                    <div className="md:col-span-2">
+                      <Select
+                        options={ENTRY_CONFIDENCE_OPTIONS}
+                        value={draft.confidence}
+                        onChange={(value) => {
+                          if (isEntryConfidence(value)) {
+                            handleDraftChange('confidence', value);
+                          }
+                        }}
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Input value={draft.notes} placeholder="Notes (optional)" onChange={(event) => handleDraftChange('notes', event.currentTarget.value)} />
+                    </div>
+                  </>
+                )}
               </div>
               <div className="space-y-3">
-                <Select
-                  label="Category"
-                  options={ENTRY_CATEGORY_OPTIONS}
-                  value={draft.category}
-                  onChange={(value) => {
-                    if (isEntryCategory(value)) {
-                      handleDraftChange('category', value);
-                    }
-                  }}
-                />
-                <div className="flex gap-2 pt-2">
-                  <Button
-                    type="button"
-                    className="flex-1"
-                    onClick={() => {
-                      const entryInput = buildEntryInput(draft, 'Life plan manual entry');
+                {manualEntryMode === 'copy' ? (
+                  <>
+                    <div className="rounded border border-dashed border-border/60 bg-background/20 p-4 text-sm text-muted-foreground">
+                      Choose an existing item name to copy it into the current month. The duplicate is created immediately and starts as <span className="font-medium text-foreground">planned</span>.
+                    </div>
+                    <Button type="button" variant="outline" onClick={handleResetManualEntryModal}>
+                      Cancel
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Select
+                      label="Category"
+                      options={ENTRY_CATEGORY_OPTIONS}
+                      value={draft.category}
+                      onChange={(value) => {
+                        if (isEntryCategory(value)) {
+                          handleDraftChange('category', value);
+                        }
+                      }}
+                    />
+                    <div className="flex gap-2 pt-2">
+                      <Button
+                        type="button"
+                        className="flex-1"
+                        onClick={() => {
+                          const entryInput = buildEntryInput(draft, 'Life plan manual entry');
 
-                      if (entryInput !== null) {
-                        onCreateEntry(entryInput);
-                        setDraft(createEntryDraft(activeMonth));
-                        setIsManualEntryOpen(false);
-                      }
-                    }}
-                  >
-                    Add entry
-                  </Button>
-                  <Button type="button" variant="outline" onClick={() => setIsManualEntryOpen(false)}>
-                    Cancel
-                  </Button>
-                </div>
+                          if (entryInput !== null) {
+                            onCreateEntry(entryInput);
+                            handleResetManualEntryModal();
+                          }
+                        }}
+                      >
+                        Add entry
+                      </Button>
+                      <Button type="button" variant="outline" onClick={handleResetManualEntryModal}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </>
+                )}
               </div>
+            </div>
             </div>
           </div>
         </div>
@@ -695,15 +628,23 @@ const ENTRY_KIND_OPTIONS: Array<{ label: string; value: CreateOperatingEntryInpu
   { label: 'Debt', value: 'debt' },
 ];
 
+const MANUAL_ENTRY_MODE_OPTIONS: Array<{ label: string; value: ManualEntryMode }> = [
+  { label: 'Create new item', value: 'create' },
+  { label: 'Copy existing item', value: 'copy' },
+];
+
 const ENTRY_CATEGORY_OPTIONS: Array<{ label: string; value: CreateOperatingEntryInput['category'] }> = [
   { label: 'Debt payment', value: 'debtPayment' },
   { label: 'Family support', value: 'familySupport' },
-  { label: 'Food and fuel', value: 'foodAndFuel' },
+  { label: 'Food', value: 'food' },
+  { label: 'Gas', value: 'gas' },
   { label: 'Housing', value: 'housing' },
   { label: 'Income', value: 'income' },
   { label: 'Insurance', value: 'insurance' },
+  { label: 'Investing', value: 'investing' },
+  { label: 'Savings', value: 'savings' },
   { label: 'Subscription', value: 'subscription' },
-  { label: 'Tuition', value: 'tuition' },
+  { label: 'Education', value: 'education' },
   { label: 'Utility', value: 'utility' },
   { label: 'Other', value: 'other' },
 ];
@@ -716,6 +657,10 @@ const ENTRY_CONFIDENCE_OPTIONS: Array<{ label: string; value: CreateOperatingEnt
 
 function isEntryKind(value: string): value is CreateOperatingEntryInput['kind'] {
   return value === 'expense' || value === 'income' || value === 'debt';
+}
+
+function isManualEntryMode(value: string): value is ManualEntryMode {
+  return value === 'create' || value === 'copy';
 }
 
 function isEntryCategory(value: string): value is CreateOperatingEntryInput['category'] {

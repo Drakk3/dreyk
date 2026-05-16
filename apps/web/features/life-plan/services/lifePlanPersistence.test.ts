@@ -104,7 +104,7 @@ function createRecurringTemplateRows(): LifePlanRecurringTemplateRow[] {
     {
       amount_usd: 45.32,
       cadence: 'monthly',
-      category: 'foodAndFuel',
+      category: 'food',
       confidence: 'estimated',
       created_at: '2026-05-01T00:00:00.000Z',
       debt_account_id: null,

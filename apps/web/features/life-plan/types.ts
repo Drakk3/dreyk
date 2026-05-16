@@ -17,12 +17,15 @@ export type CashFlowEventDirection = 'inflow' | 'outflow';
 export type CashFlowEventCategory =
   | 'debtPayment'
   | 'familySupport'
-  | 'foodAndFuel'
+  | 'food'
+  | 'gas'
   | 'housing'
   | 'income'
   | 'insurance'
+  | 'investing'
+  | 'savings'
   | 'subscription'
-  | 'tuition'
+  | 'education'
   | 'utility'
   | 'other';
 

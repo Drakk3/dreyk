@@ -25,12 +25,15 @@ export type LifePlanFinancialConfidence = 'verified' | 'estimated' | 'needsRevie
 export type LifePlanCashFlowCategory =
   | 'debtPayment'
   | 'familySupport'
-  | 'foodAndFuel'
+  | 'food'
+  | 'gas'
   | 'housing'
   | 'income'
   | 'insurance'
+  | 'investing'
+  | 'savings'
   | 'subscription'
-  | 'tuition'
+  | 'education'
   | 'utility'
   | 'other';
 
