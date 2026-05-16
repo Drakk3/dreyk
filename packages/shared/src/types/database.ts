@@ -18,6 +18,30 @@ export type ThemePreference =
 
 export type EventType = 'enter' | 'exit';
 
+export type LifePlanCurrencyCode = 'USD';
+
+export type LifePlanFinancialConfidence = 'verified' | 'estimated' | 'needsReview';
+
+export type LifePlanCashFlowCategory =
+  | 'debtPayment'
+  | 'familySupport'
+  | 'foodAndFuel'
+  | 'housing'
+  | 'income'
+  | 'insurance'
+  | 'subscription'
+  | 'tuition'
+  | 'utility'
+  | 'other';
+
+export type LifePlanEntryKind = 'income' | 'expense' | 'debt';
+
+export type LifePlanEntryStatus = 'planned' | 'done' | 'skipped';
+
+export type LifePlanEntrySourceKind = 'seed' | 'generated' | 'manual';
+
+export type LifePlanRecurringCadence = 'weekly' | 'biweekly' | 'monthly';
+
 export interface ProfileRow {
   avatar_url: string | null;
   created_at: string;
@@ -91,6 +115,92 @@ export interface ModuleRow {
   name: string;
 }
 
+export interface LifePlanMonthRow {
+  created_at: string;
+  currency_code: LifePlanCurrencyCode;
+  id: string;
+  month_key: string;
+  owner_user_id: string;
+  seeded_from_month_id: string | null;
+}
+
+export interface LifePlanDebtAccountRow {
+  apr_assumption_decimal: number | null;
+  apr_confidence: LifePlanFinancialConfidence;
+  apr_source_context: Json;
+  balance_confidence: LifePlanFinancialConfidence;
+  balance_usd: number;
+  confidence: LifePlanFinancialConfidence;
+  created_at: string;
+  creditor: string;
+  id: string;
+  is_excluded_from_payoff_line: boolean;
+  label: string;
+  minimum_payment_confidence: LifePlanFinancialConfidence;
+  minimum_payment_usd: number | null;
+  notes: string | null;
+  owner_user_id: string;
+  priority: number;
+  source_metadata: Json;
+}
+
+export interface LifePlanRecurringTemplateRow {
+  amount_usd: number;
+  cadence: LifePlanRecurringCadence;
+  category: LifePlanCashFlowCategory;
+  confidence: LifePlanFinancialConfidence;
+  created_at: string;
+  debt_account_id: string | null;
+  id: string;
+  is_active: boolean;
+  label: string;
+  notes: string | null;
+  owner_user_id: string;
+  scheduled_day: number;
+  source_metadata: Json;
+}
+
+export interface LifePlanMonthEntryRow {
+  amount_usd: number;
+  category: LifePlanCashFlowCategory;
+  confidence: LifePlanFinancialConfidence;
+  created_at: string;
+  debt_account_id: string | null;
+  entry_date: string;
+  id: string;
+  kind: LifePlanEntryKind;
+  label: string;
+  month_id: string;
+  notes: string | null;
+  owner_user_id: string;
+  source_kind: LifePlanEntrySourceKind;
+  source_metadata: Json;
+  status: LifePlanEntryStatus;
+  template_id: string | null;
+}
+
+export interface LifePlanEntryStatusHistoryRow {
+  changed_at: string;
+  entry_id: string;
+  from_status: LifePlanEntryStatus;
+  id: string;
+  owner_user_id: string;
+  reason: string | null;
+  to_status: LifePlanEntryStatus;
+}
+
+export interface LifePlanDebtPaymentEventRow {
+  amount_usd: number;
+  balance_after_usd: number | null;
+  created_at: string;
+  debt_account_id: string;
+  entry_id: string;
+  id: string;
+  notes: string | null;
+  owner_user_id: string;
+  payment_date: string;
+}
+
 export interface Database {
   public: {
     Tables: {
@@ -114,6 +224,7 @@ export interface Database {
           role?: Role;
           theme_preference?: ThemePreference;
         };
+        Relationships: [];
       };
       groups: {
         Row: GroupRow;
@@ -131,6 +242,7 @@ export interface Database {
           id?: string;
           name?: string;
         };
+        Relationships: [];
       };
       group_members: {
         Row: GroupMemberRow;
@@ -146,6 +258,7 @@ export interface Database {
           joined_at?: string;
           user_id?: string;
         };
+        Relationships: [];
       };
       user_permissions: {
         Row: UserPermissionRow;
@@ -165,6 +278,7 @@ export interface Database {
           module_key?: string;
           user_id?: string;
         };
+        Relationships: [];
       };
       zones: {
         Row: ZoneRow;
@@ -190,6 +304,7 @@ export interface Database {
           name?: string;
           radius_meters?: number;
         };
+        Relationships: [];
       };
       alexa_triggers: {
         Row: AlexaTriggerRow;
@@ -207,6 +322,7 @@ export interface Database {
           message_template?: string;
           zone_id?: string;
         };
+        Relationships: [];
       };
       location_events: {
         Row: LocationEventRow;
@@ -230,6 +346,7 @@ export interface Database {
           user_id?: string;
           zone_id?: string;
         };
+        Relationships: [];
       };
       modules: {
         Row: ModuleRow;
@@ -247,6 +364,191 @@ export interface Database {
           key?: string;
           name?: string;
         };
+        Relationships: [];
+      };
+      life_plan_months: {
+        Row: LifePlanMonthRow;
+        Insert: {
+          created_at?: string;
+          currency_code?: LifePlanCurrencyCode;
+          id?: string;
+          month_key: string;
+          owner_user_id: string;
+          seeded_from_month_id?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          currency_code?: LifePlanCurrencyCode;
+          id?: string;
+          month_key?: string;
+          owner_user_id?: string;
+          seeded_from_month_id?: string | null;
+        };
+        Relationships: [];
+      };
+      life_plan_debt_accounts: {
+        Row: LifePlanDebtAccountRow;
+        Insert: {
+          apr_assumption_decimal?: number | null;
+          apr_confidence: LifePlanFinancialConfidence;
+          apr_source_context?: Json;
+          balance_confidence: LifePlanFinancialConfidence;
+          balance_usd: number;
+          confidence: LifePlanFinancialConfidence;
+          created_at?: string;
+          creditor: string;
+          id?: string;
+          is_excluded_from_payoff_line?: boolean;
+          label: string;
+          minimum_payment_confidence: LifePlanFinancialConfidence;
+          minimum_payment_usd?: number | null;
+          notes?: string | null;
+          owner_user_id: string;
+          priority?: number;
+          source_metadata?: Json;
+        };
+        Update: {
+          apr_assumption_decimal?: number | null;
+          apr_confidence?: LifePlanFinancialConfidence;
+          apr_source_context?: Json;
+          balance_confidence?: LifePlanFinancialConfidence;
+          balance_usd?: number;
+          confidence?: LifePlanFinancialConfidence;
+          created_at?: string;
+          creditor?: string;
+          id?: string;
+          is_excluded_from_payoff_line?: boolean;
+          label?: string;
+          minimum_payment_confidence?: LifePlanFinancialConfidence;
+          minimum_payment_usd?: number | null;
+          notes?: string | null;
+          owner_user_id?: string;
+          priority?: number;
+          source_metadata?: Json;
+        };
+        Relationships: [];
+      };
+      life_plan_recurring_templates: {
+        Row: LifePlanRecurringTemplateRow;
+        Insert: {
+          amount_usd: number;
+          cadence: LifePlanRecurringCadence;
+          category: LifePlanCashFlowCategory;
+          confidence: LifePlanFinancialConfidence;
+          created_at?: string;
+          debt_account_id?: string | null;
+          id?: string;
+          is_active?: boolean;
+          label: string;
+          notes?: string | null;
+          owner_user_id: string;
+          scheduled_day: number;
+          source_metadata?: Json;
+        };
+        Update: {
+          amount_usd?: number;
+          cadence?: LifePlanRecurringCadence;
+          category?: LifePlanCashFlowCategory;
+          confidence?: LifePlanFinancialConfidence;
+          created_at?: string;
+          debt_account_id?: string | null;
+          id?: string;
+          is_active?: boolean;
+          label?: string;
+          notes?: string | null;
+          owner_user_id?: string;
+          scheduled_day?: number;
+          source_metadata?: Json;
+        };
+        Relationships: [];
+      };
+      life_plan_month_entries: {
+        Row: LifePlanMonthEntryRow;
+        Insert: {
+          amount_usd: number;
+          category: LifePlanCashFlowCategory;
+          confidence: LifePlanFinancialConfidence;
+          created_at?: string;
+          debt_account_id?: string | null;
+          entry_date: string;
+          id?: string;
+          kind: LifePlanEntryKind;
+          label: string;
+          month_id: string;
+          notes?: string | null;
+          owner_user_id: string;
+          source_kind: LifePlanEntrySourceKind;
+          source_metadata?: Json;
+          status: LifePlanEntryStatus;
+          template_id?: string | null;
+        };
+        Update: {
+          amount_usd?: number;
+          category?: LifePlanCashFlowCategory;
+          confidence?: LifePlanFinancialConfidence;
+          created_at?: string;
+          debt_account_id?: string | null;
+          entry_date?: string;
+          id?: string;
+          kind?: LifePlanEntryKind;
+          label?: string;
+          month_id?: string;
+          notes?: string | null;
+          owner_user_id?: string;
+          source_kind?: LifePlanEntrySourceKind;
+          source_metadata?: Json;
+          status?: LifePlanEntryStatus;
+          template_id?: string | null;
+        };
+        Relationships: [];
+      };
+      life_plan_entry_status_history: {
+        Row: LifePlanEntryStatusHistoryRow;
+        Insert: {
+          changed_at?: string;
+          entry_id: string;
+          from_status: LifePlanEntryStatus;
+          id?: string;
+          owner_user_id: string;
+          reason?: string | null;
+          to_status: LifePlanEntryStatus;
+        };
+        Update: {
+          changed_at?: string;
+          entry_id?: string;
+          from_status?: LifePlanEntryStatus;
+          id?: string;
+          owner_user_id?: string;
+          reason?: string | null;
+          to_status?: LifePlanEntryStatus;
+        };
+        Relationships: [];
+      };
+      life_plan_debt_payment_events: {
+        Row: LifePlanDebtPaymentEventRow;
+        Insert: {
+          amount_usd: number;
+          balance_after_usd?: number | null;
+          created_at?: string;
+          debt_account_id: string;
+          entry_id: string;
+          id?: string;
+          notes?: string | null;
+          owner_user_id: string;
+          payment_date: string;
+        };
+        Update: {
+          amount_usd?: number;
+          balance_after_usd?: number | null;
+          created_at?: string;
+          debt_account_id?: string;
+          entry_id?: string;
+          id?: string;
+          notes?: string | null;
+          owner_user_id?: string;
+          payment_date?: string;
+        };
+        Relationships: [];
       };
     };
     Views: Record<string, never>;

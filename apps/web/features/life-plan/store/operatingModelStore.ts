@@ -1,5 +1,3 @@
-import type { OperatingMonth } from '../types';
-
 export interface OperatingModelStoreState {
   activeMonthId: string | null;
   selectedWeekId: string | null;
@@ -15,9 +13,11 @@ export interface SetSelectedWeekAction {
   weekId: string | null;
 }
 
-export interface SyncMonthAction {
-  month: OperatingMonth;
-  type: 'syncMonth';
+export interface SyncActiveMonthAction {
+  activeMonthId: string;
+  availableWeekIds: string[];
+  defaultWeekId: string | null;
+  type: 'syncActiveMonth';
 }
 
 export interface ResetOperatingModelAction {
@@ -27,7 +27,7 @@ export interface ResetOperatingModelAction {
 export type OperatingModelStoreAction =
   | SetActiveMonthAction
   | SetSelectedWeekAction
-  | SyncMonthAction
+  | SyncActiveMonthAction
   | ResetOperatingModelAction;
 
 export const INITIAL_OPERATING_MODEL_STORE_STATE: OperatingModelStoreState = {
@@ -35,21 +35,16 @@ export const INITIAL_OPERATING_MODEL_STORE_STATE: OperatingModelStoreState = {
   selectedWeekId: null,
 };
 
-function resolveSelectedWeekId(month: OperatingMonth, selectedWeekId: string | null): string | null {
+function resolveSelectedWeekId(
+  availableWeekIds: string[],
+  defaultWeekId: string | null,
+  selectedWeekId: string | null,
+): string | null {
   if (selectedWeekId === null) {
-    return month.weeks[0]?.id ?? null;
+    return defaultWeekId;
   }
 
-  const matchedWeek = month.weeks.find((week) => week.id === selectedWeekId);
-
-  return matchedWeek?.id ?? month.weeks[0]?.id ?? null;
-}
-
-export function createOperatingModelStoreState(month: OperatingMonth): OperatingModelStoreState {
-  return {
-    activeMonthId: month.id,
-    selectedWeekId: month.weeks[0]?.id ?? null,
-  };
+  return availableWeekIds.includes(selectedWeekId) ? selectedWeekId : defaultWeekId;
 }
 
 export function reduceOperatingModelStoreState(
@@ -70,10 +65,10 @@ export function reduceOperatingModelStoreState(
     };
   }
 
-  if (action.type === 'syncMonth') {
+  if (action.type === 'syncActiveMonth') {
     return {
-      activeMonthId: action.month.id,
-      selectedWeekId: resolveSelectedWeekId(action.month, state.selectedWeekId),
+      activeMonthId: action.activeMonthId,
+      selectedWeekId: resolveSelectedWeekId(action.availableWeekIds, action.defaultWeekId, state.selectedWeekId),
     };
   }
 

@@ -20,6 +20,7 @@ export interface CreateOperatingEntryInput {
   source: FinancialSourceMetadata;
   sourceKind: OperatingEntrySourceKind;
   status?: OperatingEntryStatus;
+  templateId?: string;
 }
 
 export interface UpdateOperatingEntryInput {
@@ -79,9 +80,11 @@ function resolveWeekId(month: OperatingMonth, date: string): string {
 }
 
 function createEntryId(monthId: string, date: string, label: string): string {
-  const normalizedLabel = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  void monthId;
+  void date;
+  void label;
 
-  return `${monthId}-${date}-${normalizedLabel || 'entry'}-${crypto.randomUUID().slice(0, 8)}`;
+  return crypto.randomUUID();
 }
 
 function updateMonthEntries(month: OperatingMonth, entries: OperatingEntry[]): OperatingMonth {
@@ -109,6 +112,7 @@ export function createOperatingEntry(month: OperatingMonth, input: CreateOperati
     source: input.source,
     sourceKind: input.sourceKind,
     status: input.status ?? 'planned',
+    ...(input.templateId === undefined ? {} : { templateId: input.templateId }),
     weekId,
   };
 
@@ -203,7 +207,7 @@ export function transitionOperatingEntryStatus(
         changedAt: input.changedAt,
         entryId,
         from: currentEntry.status,
-        id: `${entryId}-${input.changedAt}-${input.nextStatus}`,
+        id: crypto.randomUUID(),
         ...(input.reason === undefined ? {} : { reason: input.reason }),
         to: input.nextStatus,
       },

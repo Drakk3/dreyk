@@ -165,12 +165,14 @@ function createEmptyOperatingMonth(baseMonth: OperatingMonth, month: string): Op
 
   return {
     currencyCode: 'USD',
+    debtPaymentEvents: [],
     debtTracks: baseMonth.debtTracks,
     entries: [],
     id: monthId,
     month,
     recurringQueue: [],
     recurringTemplates: baseMonth.recurringTemplates,
+    seededFromMonthId: baseMonth.id,
     statusHistory: [],
     weeks,
   };
@@ -219,6 +221,7 @@ export function seedOperatingMonthFromPreviousMonth(previousMonth: OperatingMont
         source: entry.source,
         sourceKind: entry.sourceKind,
         status: 'planned',
+        ...(entry.templateId === undefined ? {} : { templateId: entry.templateId }),
       });
     }, seededMonth);
 }
@@ -242,6 +245,7 @@ export function incorporateRecurringQueueItem(month: OperatingMonth, queueItemId
     source: queueItem.source,
     sourceKind: 'generated',
     status: 'planned',
+    templateId: queueItem.templateId,
   });
   const createdEntry = nextMonth.entries.find((entry) => {
     return (

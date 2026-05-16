@@ -153,6 +153,8 @@ function buildRecurringQueueItem(
 function buildDebtTrack(debtRecord: RealDebtRecord, priority: number): DebtTrack {
   return {
     apr: debtRecord.apr ?? 0,
+    aprAssumptionDecimal: debtRecord.apr ?? null,
+    aprSourceContext: {},
     balanceUsd: debtRecord.balance,
     confidence: debtRecord.confidence,
     creditor: debtRecord.creditor,
@@ -182,12 +184,14 @@ export function buildOperatingMonthFromSnapshot(snapshot: RealDataSnapshot): Ope
 
   return {
     currencyCode: 'USD',
+    debtPaymentEvents: [],
     debtTracks,
     entries,
     id: monthId,
     month: snapshot.month,
     recurringQueue,
     recurringTemplates,
+    seededFromMonthId: null,
     statusHistory: [],
     weeks,
   };

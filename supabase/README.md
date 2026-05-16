@@ -24,6 +24,13 @@ Apply migrations in numeric order:
 10. `0009_indexes.sql`
 11. `0010_rls.sql`
 
+### Life-plan operating persistence rollout
+
+- `0011_life_plan_operating.sql` adds the month ledger, entries, status history, debt accounts, debt payment events, and recurring templates.
+- `0012_life_plan_operating_rls.sql` locks every life-plan row to `owner_user_id = auth.uid()`.
+- The first remote month is bootstrapped from the May 2026 snapshot in the web feature.
+- Future recurring pay stays DERIVED from recurring templates plus month entries; there is no separate persisted recurring-queue table.
+
 ## Suggested CLI flow
 
 ### Local validation

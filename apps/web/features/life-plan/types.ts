@@ -1,3 +1,13 @@
+import type {
+  Json,
+  LifePlanDebtAccountRow,
+  LifePlanDebtPaymentEventRow,
+  LifePlanEntryStatusHistoryRow,
+  LifePlanMonthEntryRow,
+  LifePlanMonthRow,
+  LifePlanRecurringTemplateRow,
+} from '@dreyk/shared/types/database';
+
 export type CurrencyCode = 'COP' | 'USD';
 
 export type FinancialDataConfidence = 'verified' | 'estimated' | 'needsReview';
@@ -41,6 +51,10 @@ export type OperatingEntryStatus = 'planned' | 'done' | 'skipped';
 export type OperatingEntrySourceKind = 'seed' | 'generated' | 'manual';
 
 export type OperatingRecurringQueueStatus = 'pending' | 'incorporated';
+
+export interface JsonObject {
+  [key: string]: Json | undefined;
+}
 
 export interface FinancialSourceMetadata {
   label: string;
@@ -119,6 +133,7 @@ export interface OperatingEntry {
   source: FinancialSourceMetadata;
   sourceKind: OperatingEntrySourceKind;
   status: OperatingEntryStatus;
+  templateId?: string;
   weekId: string;
 }
 
@@ -129,6 +144,7 @@ export interface OperatingRecurringTemplate {
   confidence: FinancialDataConfidence;
   debtId?: string;
   id: string;
+  isActive?: boolean;
   label: string;
   notes?: string;
   scheduledDay: number;
@@ -155,6 +171,8 @@ export interface OperatingRecurringQueueItem {
 
 export interface DebtTrack {
   apr: number;
+  aprAssumptionDecimal?: number | null;
+  aprSourceContext?: JsonObject;
   balanceUsd: number;
   confidence: FinancialDataConfidence;
   creditor: string;
@@ -167,14 +185,27 @@ export interface DebtTrack {
   source: DebtSourceMetadata;
 }
 
+export interface OperatingDebtPaymentEvent {
+  amountUsd: number;
+  balanceAfterUsd?: number;
+  createdAt: string;
+  debtId: string;
+  entryId: string;
+  id: string;
+  notes?: string;
+  paymentDate: string;
+}
+
 export interface OperatingMonth {
   currencyCode: 'USD';
+  debtPaymentEvents: OperatingDebtPaymentEvent[];
   debtTracks: DebtTrack[];
   entries: OperatingEntry[];
   id: string;
   month: string;
   recurringQueue: OperatingRecurringQueueItem[];
   recurringTemplates: OperatingRecurringTemplate[];
+  seededFromMonthId?: string | null;
   statusHistory: EntryStatusHistory[];
   weeks: OperatingWeek[];
 }
@@ -183,6 +214,15 @@ export interface DebtSourceMetadata extends FinancialSourceMetadata {
   balanceConfidence: FinancialDataConfidence;
   aprConfidence: FinancialDataConfidence;
   minimumPaymentConfidence: FinancialDataConfidence;
+}
+
+export interface LifePlanMonthPersistenceRecord {
+  debtAccountRows: LifePlanDebtAccountRow[];
+  debtPaymentEventRows: LifePlanDebtPaymentEventRow[];
+  entryStatusHistoryRows: LifePlanEntryStatusHistoryRow[];
+  entryRows: LifePlanMonthEntryRow[];
+  monthRow: LifePlanMonthRow;
+  recurringTemplateRows: LifePlanRecurringTemplateRow[];
 }
 
 export interface MonthlyCashFlow {
