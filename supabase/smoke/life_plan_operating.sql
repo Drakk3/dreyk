@@ -384,6 +384,67 @@ insert into public.life_plan_recurring_templates (
   'verified'
 );
 
+insert into public.life_plan_recurring_templates (
+  id,
+  owner_user_id,
+  label,
+  category,
+  cadence,
+  amount_usd,
+  scheduled_day,
+  confidence
+) values
+  (
+    '30000000-0000-4000-8000-000000000021',
+    '00000000-0000-4000-8000-0000000000b1',
+    'Groceries B',
+    'food',
+    'monthly',
+    120.00,
+    12,
+    'verified'
+  ),
+  (
+    '30000000-0000-4000-8000-000000000022',
+    '00000000-0000-4000-8000-0000000000b1',
+    'Fuel B',
+    'gas',
+    'monthly',
+    60.00,
+    13,
+    'verified'
+  ),
+  (
+    '30000000-0000-4000-8000-000000000023',
+    '00000000-0000-4000-8000-0000000000b1',
+    'Course B',
+    'education',
+    'monthly',
+    90.00,
+    14,
+    'verified'
+  ),
+  (
+    '30000000-0000-4000-8000-000000000024',
+    '00000000-0000-4000-8000-0000000000b1',
+    'Brokerage B',
+    'investing',
+    'monthly',
+    110.00,
+    15,
+    'verified'
+  ),
+  (
+    '30000000-0000-4000-8000-000000000025',
+    '00000000-0000-4000-8000-0000000000b1',
+    'Emergency Fund B',
+    'savings',
+    'monthly',
+    130.00,
+    16,
+    'verified'
+  );
+
 insert into public.life_plan_month_entries (
   id,
   owner_user_id,
@@ -412,6 +473,197 @@ insert into public.life_plan_month_entries (
   date '2026-06-10',
   'verified',
   'manual'
+);
+
+insert into public.life_plan_month_entries (
+  id,
+  owner_user_id,
+  month_id,
+  kind,
+  status,
+  label,
+  category,
+  amount_usd,
+  entry_date,
+  confidence,
+  source_kind
+) values
+  (
+    '40000000-0000-4000-8000-000000000021',
+    '00000000-0000-4000-8000-0000000000b1',
+    '10000000-0000-4000-8000-000000000002',
+    'expense',
+    'planned',
+    'Groceries B',
+    'food',
+    120.00,
+    date '2026-06-16',
+    'verified',
+    'manual'
+  ),
+  (
+    '40000000-0000-4000-8000-000000000022',
+    '00000000-0000-4000-8000-0000000000b1',
+    '10000000-0000-4000-8000-000000000002',
+    'expense',
+    'planned',
+    'Fuel B',
+    'gas',
+    60.00,
+    date '2026-06-17',
+    'verified',
+    'manual'
+  ),
+  (
+    '40000000-0000-4000-8000-000000000023',
+    '00000000-0000-4000-8000-0000000000b1',
+    '10000000-0000-4000-8000-000000000002',
+    'expense',
+    'planned',
+    'Course B',
+    'education',
+    90.00,
+    date '2026-06-18',
+    'verified',
+    'manual'
+  ),
+  (
+    '40000000-0000-4000-8000-000000000024',
+    '00000000-0000-4000-8000-0000000000b1',
+    '10000000-0000-4000-8000-000000000002',
+    'expense',
+    'planned',
+    'Brokerage B',
+    'investing',
+    110.00,
+    date '2026-06-19',
+    'verified',
+    'manual'
+  ),
+  (
+    '40000000-0000-4000-8000-000000000025',
+    '00000000-0000-4000-8000-0000000000b1',
+    '10000000-0000-4000-8000-000000000002',
+    'expense',
+    'planned',
+    'Emergency Fund B',
+    'savings',
+    130.00,
+    date '2026-06-20',
+    'verified',
+    'manual'
+  );
+
+select pg_temp.expect_failure(
+  $$
+    insert into public.life_plan_recurring_templates (
+      id,
+      owner_user_id,
+      label,
+      category,
+      cadence,
+      amount_usd,
+      scheduled_day,
+      confidence
+    ) values (
+      '30000000-0000-4000-8000-000000000031',
+      '00000000-0000-4000-8000-0000000000b1',
+      'Legacy Food And Fuel B',
+      'foodAndFuel',
+      'monthly',
+      70.00,
+      17,
+      'verified'
+    )
+  $$,
+  'Recurring template rejects legacy foodAndFuel category'
+);
+
+select pg_temp.expect_failure(
+  $$
+    insert into public.life_plan_recurring_templates (
+      id,
+      owner_user_id,
+      label,
+      category,
+      cadence,
+      amount_usd,
+      scheduled_day,
+      confidence
+    ) values (
+      '30000000-0000-4000-8000-000000000032',
+      '00000000-0000-4000-8000-0000000000b1',
+      'Legacy Tuition B',
+      'tuition',
+      'monthly',
+      80.00,
+      18,
+      'verified'
+    )
+  $$,
+  'Recurring template rejects legacy tuition category'
+);
+
+select pg_temp.expect_failure(
+  $$
+    insert into public.life_plan_month_entries (
+      id,
+      owner_user_id,
+      month_id,
+      kind,
+      status,
+      label,
+      category,
+      amount_usd,
+      entry_date,
+      confidence,
+      source_kind
+    ) values (
+      '40000000-0000-4000-8000-000000000031',
+      '00000000-0000-4000-8000-0000000000b1',
+      '10000000-0000-4000-8000-000000000002',
+      'expense',
+      'planned',
+      'Legacy Food And Fuel B',
+      'foodAndFuel',
+      70.00,
+      date '2026-06-21',
+      'verified',
+      'manual'
+    )
+  $$,
+  'Month entry rejects legacy foodAndFuel category'
+);
+
+select pg_temp.expect_failure(
+  $$
+    insert into public.life_plan_month_entries (
+      id,
+      owner_user_id,
+      month_id,
+      kind,
+      status,
+      label,
+      category,
+      amount_usd,
+      entry_date,
+      confidence,
+      source_kind
+    ) values (
+      '40000000-0000-4000-8000-000000000032',
+      '00000000-0000-4000-8000-0000000000b1',
+      '10000000-0000-4000-8000-000000000002',
+      'expense',
+      'planned',
+      'Legacy Tuition B',
+      'tuition',
+      80.00,
+      date '2026-06-22',
+      'verified',
+      'manual'
+    )
+  $$,
+  'Month entry rejects legacy tuition category'
 );
 
 select pg_temp.expect_failure(
