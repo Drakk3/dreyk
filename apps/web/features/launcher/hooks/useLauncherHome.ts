@@ -64,7 +64,7 @@ export function useLauncherHome({ profile, role }: UseLauncherHomeParams): UseLa
       },
       {
         ctaLabel: 'Open life plan',
-        description: 'Review planning dashboards for finances, teaching path, and contingencies.',
+        description: 'Review the operating overview and weekly cash-flow workspace.',
         href: '/life-plan',
         icon: WalletCards,
         key: 'life-plan',

@@ -8,12 +8,12 @@ export interface LifePlanNavItem {
   label: string;
 }
 
+export const LIFE_PLAN_DEFAULT_SECTION: LifePlanSectionKey = 'overview';
+
 export const LIFE_PLAN_NAV_ITEMS: LifePlanNavItem[] = [
   { key: 'overview', label: 'Overview', icon: '◉' },
   { key: 'cash-flow', label: 'Cash flow', icon: '≈' },
-  { key: 'finances', label: 'Finances', icon: '$' },
   { key: 'teaching', label: 'Teaching', icon: '⟡' },
-  { key: 'contingencies', label: 'Risks', icon: '!' },
   { key: 'actions', label: 'Actions', icon: '→' },
 ];
 
@@ -26,12 +26,5 @@ export const LIFE_PLAN_NAV_SECTIONS: AppSidebarSection[] = [
 ];
 
 export function isLifePlanSectionKey(value: string): value is LifePlanSectionKey {
-  return (
-    value === 'overview' ||
-    value === 'cash-flow' ||
-    value === 'finances' ||
-    value === 'teaching' ||
-    value === 'contingencies' ||
-    value === 'actions'
-  );
+  return value === 'overview' || value === 'cash-flow' || value === 'teaching' || value === 'actions';
 }

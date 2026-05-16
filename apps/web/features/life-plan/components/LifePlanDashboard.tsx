@@ -15,16 +15,14 @@ import { AppTopbar } from '@/shared/components/app-shell/AppTopbar';
 import { useLifePlanDashboard } from '../hooks/useLifePlanDashboard';
 import {
   isLifePlanSectionKey,
+  LIFE_PLAN_DEFAULT_SECTION,
   LIFE_PLAN_NAV_ITEMS,
   LIFE_PLAN_NAV_SECTIONS,
 } from '../navigation';
 import type { LifePlanSectionKey } from '../types';
-import { ContingencyCard } from './ContingencyCard';
 import { FinancialProjectionCard } from './FinancialProjectionCard';
 import { LifePlanHeroCard } from './LifePlanHeroCard';
-import { LifePlanKpiStrip } from './LifePlanKpiStrip';
-import { PriorityActionsCard } from './PriorityActionsCard';
-import { TeachingPathCard } from './TeachingPathCard';
+import { PlaceholderSurfaceCard } from './PlaceholderSurfaceCard';
 import { WeeklyCashFlowWorkspace } from './WeeklyCashFlowWorkspace';
 
 interface LifePlanDashboardProps {
@@ -44,16 +42,23 @@ function getInitials(displayName: string): string {
 
 export function LifePlanDashboard({ initialSection, profile, role }: LifePlanDashboardProps): JSX.Element {
   const {
-    contingencyPlan,
+    activeOperatingMonth,
+    availableOperatingMonths,
     cashFlowWorkspace,
-    financialProjection,
+    handleCreateOperatingEntry,
     handleHorizonChange,
-    handleScenarioChange,
+    handleIncorporateRecurringQueueItem,
+    handleNavigateOperatingMonth,
+    handleSelectOperatingMonth,
+    handleSelectOperatingWeek,
+    handleTransitionOperatingEntryStatus,
+    handleUpdateOperatingEntry,
+    handleDeleteOperatingEntry,
     horizonOptions,
-    priorityActions,
+    operatingDebtTimeline,
+    operatingOverview,
+    selectedOperatingWeekId,
     selectedHorizonMonths,
-    selectedScenario,
-    selectedScenarioId,
     snapshot,
     teachingPath,
   } = useLifePlanDashboard();
@@ -87,6 +92,22 @@ export function LifePlanDashboard({ initialSection, profile, role }: LifePlanDas
     return LIFE_PLAN_NAV_ITEMS.map((item) => ({ label: item.label, value: item.key }));
   }, []);
 
+  const statusLabel = React.useMemo((): string => {
+    if (activeSection === 'cash-flow') {
+      return 'OPERATING MODEL · CASH FLOW / USD DEFAULT';
+    }
+
+    if (activeSection === 'teaching') {
+      return 'PLACEHOLDER · TEACHING / RESERVED';
+    }
+
+    if (activeSection === 'actions') {
+      return 'PLACEHOLDER · ACTIONS / RESERVED';
+    }
+
+    return 'OPERATING MODEL · OVERVIEW / USD + COP CONTEXT';
+  }, [activeSection]);
+
   return (
     <div className="relative flex min-h-screen overflow-hidden bg-background">
       <div className="pointer-events-none fixed inset-0 circuit-bg" />
@@ -101,7 +122,7 @@ export function LifePlanDashboard({ initialSection, profile, role }: LifePlanDas
       <AppSidebar
         activeItemKey={activeSection}
         brandName="DREYK"
-        brandTagline="LIFE PLAN / MVP"
+        brandTagline="LIFE PLAN / OPERATING MODEL"
         navSections={LIFE_PLAN_NAV_SECTIONS}
         onItemSelect={(key: string) => {
           if (isLifePlanSectionKey(key)) {
@@ -114,15 +135,13 @@ export function LifePlanDashboard({ initialSection, profile, role }: LifePlanDas
       />
 
       <div className="relative flex min-h-screen min-w-0 flex-1 flex-col">
-        <AppTopbar
-          breadcrumbs={['PWA / WEB · APPS/WEB', 'STANDARD USER', 'LIFE PLAN DASHBOARD']}
-          highlightedBreadcrumbIndex={2}
-          initials={initials}
-          onCommandOpen={handleCommandMenuOpen}
-          statusLabel={
-            activeSection === 'cash-flow' ? 'REAL DATA STATUS · CASH FLOW / USD' : 'MOCK STATUS · JUAN DAVID / CUMARAL'
-          }
-        />
+          <AppTopbar
+            breadcrumbs={['PWA / WEB', 'STANDARD USER', 'LIFE PLAN OPERATING MODEL']}
+            highlightedBreadcrumbIndex={2}
+            initials={initials}
+            onCommandOpen={handleCommandMenuOpen}
+            statusLabel={statusLabel}
+          />
 
         <main className="flex-1 overflow-y-auto">
           <div className="space-y-5 px-6 py-6">
@@ -133,10 +152,10 @@ export function LifePlanDashboard({ initialSection, profile, role }: LifePlanDas
                 </div>
                 <h1 className="mt-1 flex items-center gap-3 text-2xl uppercase tracking-[0.22em]">
                   <span className="font-mono text-3xl text-primary">|</span>
-                  LIFE PLAN / EXECUTION
+                  LIFE PLAN / OPERATING MODEL
                 </h1>
                 <p className="mt-1 text-sm uppercase tracking-[0.12em] text-muted-foreground">
-                  Dashboard mock-first para docencia pública, caja y contingencias en Meta.
+                  Overview y cash flow comparten el mismo mes operativo en USD.
                 </p>
               </div>
 
@@ -153,64 +172,59 @@ export function LifePlanDashboard({ initialSection, profile, role }: LifePlanDas
               />
             </div>
 
-            {activeSection !== 'cash-flow' ? (
-              <>
-                <LifePlanHeroCard currentMilestone={teachingPath.currentMilestone} snapshot={snapshot} />
-                <LifePlanKpiStrip
-                  contingencyPlan={contingencyPlan}
-                  financialProjection={financialProjection}
-                  priorityActions={priorityActions}
-                  teachingPath={teachingPath}
-                />
-              </>
-            ) : null}
+            {activeSection === 'overview' ? <LifePlanHeroCard currentMilestone={teachingPath.currentMilestone} snapshot={snapshot} /> : null}
 
             {activeSection === 'overview' ? (
-              <div className="grid gap-4 xl:grid-cols-[1.35fr_1fr]">
+              <div className="grid gap-4">
                 <FinancialProjectionCard
-                  debts={snapshot.debts}
-                  financialProjection={financialProjection}
+                  debtTimeline={operatingDebtTimeline}
                   handleHorizonChange={handleHorizonChange}
-                  handleScenarioChange={handleScenarioChange}
                   horizonOptions={horizonOptions}
-                  scenarios={snapshot.scenarios}
+                  operatingOverview={operatingOverview}
                   selectedHorizonMonths={selectedHorizonMonths}
-                  selectedScenario={selectedScenario}
-                  selectedScenarioId={selectedScenarioId}
+                  selectedMonthLabel={availableOperatingMonths.find((month) => month.id === activeOperatingMonth.id)?.label ?? activeOperatingMonth.month}
                 />
-                <div className="space-y-4">
-                  <TeachingPathCard teachingPath={teachingPath} />
-                  <ContingencyCard contingencyPlan={contingencyPlan} />
-                </div>
               </div>
             ) : null}
 
-            {activeSection === 'finances' ? (
-              <FinancialProjectionCard
-                debts={snapshot.debts}
-                financialProjection={financialProjection}
-                handleHorizonChange={handleHorizonChange}
-                handleScenarioChange={handleScenarioChange}
-                horizonOptions={horizonOptions}
-                scenarios={snapshot.scenarios}
-                selectedHorizonMonths={selectedHorizonMonths}
-                selectedScenario={selectedScenario}
-                selectedScenarioId={selectedScenarioId}
+            {activeSection === 'cash-flow' ? (
+              <WeeklyCashFlowWorkspace
+                activeMonth={activeOperatingMonth}
+                availableMonths={availableOperatingMonths}
+                onCreateEntry={handleCreateOperatingEntry}
+                onDeleteEntry={handleDeleteOperatingEntry}
+                onIncorporateRecurringQueueItem={handleIncorporateRecurringQueueItem}
+                onNavigateMonth={handleNavigateOperatingMonth}
+                onSelectMonth={handleSelectOperatingMonth}
+                onSelectWeek={handleSelectOperatingWeek}
+                onTransitionEntryStatus={handleTransitionOperatingEntryStatus}
+                onUpdateEntry={handleUpdateOperatingEntry}
+                selectedWeekId={selectedOperatingWeekId}
+                workspace={cashFlowWorkspace}
               />
             ) : null}
 
-            {activeSection === 'cash-flow' ? <WeeklyCashFlowWorkspace workspace={cashFlowWorkspace} /> : null}
-
-            {activeSection === 'teaching' ? <TeachingPathCard teachingPath={teachingPath} /> : null}
-            {activeSection === 'contingencies' ? (
-              <ContingencyCard contingencyPlan={contingencyPlan} />
+            {activeSection === 'teaching' ? (
+              <PlaceholderSurfaceCard
+                badgeLabel="Reserved"
+                description="Teaching will stay blank until its operating-model slice is defined."
+                subtitle="TEACHING · PLACEHOLDER"
+                title="Teaching"
+              />
             ) : null}
 
-            {activeSection !== 'cash-flow' ? <PriorityActionsCard priorityActions={priorityActions} /> : null}
+            {activeSection === 'actions' ? (
+              <PlaceholderSurfaceCard
+                badgeLabel="Reserved"
+                description="Actions will stay blank until the next operating-model rollout picks up execution workflows."
+                subtitle="ACTIONS · PLACEHOLDER"
+                title="Actions"
+              />
+            ) : null}
 
             <footer className="flex items-center justify-between gap-4 pb-4 pt-2 font-mono text-[10px] uppercase tracking-widest text-foreground/30">
-              <span>DREYK / LIFE PLAN PREVIEW · BUILT ON THEGRIDCN · ARES THEME</span>
-              <span>PRIMARY TRACK: DOCENCIA PÚBLICA · DECRETO 1278</span>
+              <span>DREYK / LIFE PLAN OPERATING MODEL</span>
+              <span>USD DEFAULT · COP SOLO CONTEXTO DOCENTE</span>
             </footer>
           </div>
         </main>
@@ -221,7 +235,7 @@ export function LifePlanDashboard({ initialSection, profile, role }: LifePlanDas
         onOpenChange={handleCommandMenuChange}
         items={commandItems}
         label="DREYK / LIFE PLAN COMMAND"
-        placeholder="Jump to section or workspace…"
+        placeholder={`Jump to ${activeSection === LIFE_PLAN_DEFAULT_SECTION ? 'cash flow, overview, or a placeholder surface' : 'another section or workspace'}…`}
       />
     </div>
   );

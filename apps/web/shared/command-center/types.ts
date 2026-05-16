@@ -7,9 +7,9 @@ export type AppCommandHref =
   | '/geofencing'
   | '/life-plan'
   | '/life-plan?section=overview'
-  | '/life-plan?section=finances'
+  | '/life-plan?section=cash-flow'
   | '/life-plan?section=teaching'
-  | '/life-plan?section=contingencies'
+  | '/life-plan?section=actions'
   | '/admin';
 
 export interface SharedCommandMenuItem {

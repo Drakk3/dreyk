@@ -13,9 +13,9 @@ interface LifePlanHeroCardProps {
 export function LifePlanHeroCard({ currentMilestone, snapshot }: LifePlanHeroCardProps): JSX.Element {
   return (
     <DataCard
-      subtitle="USER LANDING · LIFE PLAN"
-      title="Cumaral deployment dashboard"
-      headerRight={<Badge variant="success" dot pulse>{snapshot.currencyCode} · MVP</Badge>}
+      subtitle="OPERATING OVERVIEW · LIFE PLAN"
+      title="Cumaral operating model"
+      headerRight={<Badge variant="default">USD default</Badge>}
     >
       <div className="grid gap-4 p-4 lg:grid-cols-[1.5fr_1fr]">
         <div className="space-y-3">
@@ -32,7 +32,7 @@ export function LifePlanHeroCard({ currentMilestone, snapshot }: LifePlanHeroCar
           <div className="flex flex-wrap gap-2">
             <Badge variant="default">Destino · {snapshot.locationLabel}</Badge>
             <Badge variant="outline">Foco · Decreto 1278</Badge>
-            <Badge variant="warning">Sin backend · mock-first</Badge>
+            <Badge variant="outline">COP solo contexto docente</Badge>
           </div>
         </div>
 

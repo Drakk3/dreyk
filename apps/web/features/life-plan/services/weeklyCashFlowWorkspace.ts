@@ -1,33 +1,21 @@
-import type { CashFlowCalendarSummary, CashFlowValidationIssue } from './cashFlowCalendar';
-import { buildCashFlowCalendar } from './cashFlowCalendar';
-import type { RealDataSnapshot, RealDebtRecord } from '../realDataSnapshot';
 import type {
-  CashFlowEvent,
   CashFlowWorkspaceSummary,
   CashFlowWorkspaceWeek,
   CashFlowWorkspaceWeekEvent,
   FinancialDataConfidence,
+  OperatingEntry,
+  OperatingMonth,
   ReviewQueueItem,
   SafeExtraPaymentSummary,
-  WeeklyCashFlowCheckpoint,
   WeeklyCashFlowWorkspace,
 } from '../types';
-
-interface ReviewEventCandidate {
-  event: CashFlowEvent;
-  weekStartDate: string;
-}
 
 function roundCurrency(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
-function formatWeekLabel(weekStartDate: string, weekEndDate: string): string {
-  return `${weekStartDate} → ${weekEndDate}`;
-}
-
 function isReviewConfidence(confidence: FinancialDataConfidence): boolean {
-  return confidence === 'needsReview' || confidence === 'estimated';
+  return confidence === 'estimated' || confidence === 'needsReview';
 }
 
 function getConfidenceRank(confidence: FinancialDataConfidence): number {
@@ -43,147 +31,120 @@ function getConfidenceRank(confidence: FinancialDataConfidence): number {
 }
 
 function getKindRank(kind: ReviewQueueItem['kind']): number {
-  if (kind === 'validation') {
+  if (kind === 'debt') {
     return 0;
   }
 
-  if (kind === 'debt') {
-    return 1;
-  }
-
-  return 2;
+  return 1;
 }
 
-function buildWeekEvent(event: CashFlowEvent, needsReviewItemIds: Set<string>): CashFlowWorkspaceWeekEvent {
+function getDirection(entry: OperatingEntry): CashFlowWorkspaceWeekEvent['direction'] {
+  return entry.kind === 'income' ? 'inflow' : 'outflow';
+}
+
+function isProjectedEntry(entry: OperatingEntry): boolean {
+  return entry.status !== 'skipped';
+}
+
+function buildWeekEvent(entry: OperatingEntry): CashFlowWorkspaceWeekEvent {
   return {
-    id: event.id,
-    date: event.date,
-    label: event.label,
-    direction: event.direction,
-    category: event.category,
-    amount: event.amount,
-    currencyCode: event.currencyCode,
-    confidence: event.confidence,
-    isReviewRequired: needsReviewItemIds.has(event.id) || isReviewConfidence(event.confidence),
-    ...(event.notes === undefined ? {} : { notes: event.notes }),
-    sourceLabel: event.source.label,
+    amount: entry.amountUsd,
+    category: entry.category,
+    confidence: entry.confidence,
+    date: entry.date,
+    ...(entry.debtId === undefined ? {} : { debtId: entry.debtId }),
+    direction: getDirection(entry),
+    id: entry.id,
+    isReviewRequired: isReviewConfidence(entry.confidence),
+    kind: entry.kind,
+    label: entry.label,
+    ...(entry.notes === undefined ? {} : { notes: entry.notes }),
+    currencyCode: 'USD',
+    sourceKind: entry.sourceKind,
+    sourceLabel: entry.source.label,
+    status: entry.status,
   };
 }
 
-function buildWorkspaceWeek(
-  checkpoint: WeeklyCashFlowCheckpoint,
-  eventMap: Map<string, CashFlowEvent>,
-  needsReviewItemIds: Set<string>,
-): CashFlowWorkspaceWeek {
-  const events = checkpoint.eventIds.flatMap((eventId) => {
-    const event = eventMap.get(eventId);
-
-    if (event === undefined) {
-      return [];
-    }
-
-    return [buildWeekEvent(event, needsReviewItemIds)];
-  });
-  const reviewItemCount = events.filter((event) => event.isReviewRequired).length;
-  const estimatedItemCount = events.filter((event) => event.confidence === 'estimated').length;
+function buildWorkspaceWeek(month: OperatingMonth, weekId: string, runningBalance: number): CashFlowWorkspaceWeek {
+  const week = month.weeks.find((candidateWeek) => candidateWeek.id === weekId);
+  const entries = month.entries
+    .filter((entry) => entry.weekId === weekId)
+    .sort((leftEntry, rightEntry) => leftEntry.date.localeCompare(rightEntry.date));
+  const visibleEntries = entries.filter(isProjectedEntry);
+  const totalInflow = roundCurrency(
+    visibleEntries
+      .filter((entry) => entry.kind === 'income')
+      .reduce((sum, entry) => sum + entry.amountUsd, 0),
+  );
+  const totalOutflow = roundCurrency(
+    visibleEntries
+      .filter((entry) => entry.kind !== 'income')
+      .reduce((sum, entry) => sum + entry.amountUsd, 0),
+  );
+  const endingBalance = roundCurrency(runningBalance + totalInflow - totalOutflow);
+  const events = entries.map(buildWeekEvent);
 
   return {
-    id: checkpoint.id,
-    label: formatWeekLabel(checkpoint.weekStartDate, checkpoint.weekEndDate),
-    weekStartDate: checkpoint.weekStartDate,
-    weekEndDate: checkpoint.weekEndDate,
-    startingBalance: checkpoint.startingBalance,
-    totalInflow: checkpoint.totalInflow,
-    totalOutflow: checkpoint.totalOutflow,
-    freeMargin: checkpoint.freeMargin,
-    endingBalance: checkpoint.endingBalance,
+    endingBalance,
+    estimatedItemCount: events.filter((event) => event.confidence === 'estimated').length,
     eventCount: events.length,
-    estimatedItemCount,
-    reviewItemCount,
     events,
+    freeMargin: roundCurrency(totalInflow - totalOutflow),
+    id: weekId,
+    label: week?.label ?? '',
+    reviewItemCount: events.filter((event) => event.isReviewRequired).length,
+    startingBalance: runningBalance,
+    totalInflow,
+    totalOutflow,
+    weekEndDate: week?.endDate ?? '',
+    weekStartDate: week?.startDate ?? '',
   };
 }
 
-function buildReviewEventCandidates(
-  calendar: CashFlowCalendarSummary,
-  needsReviewItemIds: Set<string>,
-): ReviewEventCandidate[] {
-  return calendar.weeklyCheckpoints.flatMap((checkpoint) => {
-    return checkpoint.eventIds.flatMap((eventId) => {
-      const event = calendar.events.find((calendarEvent) => calendarEvent.id === eventId);
+function buildReviewQueue(month: OperatingMonth): ReviewQueueItem[] {
+  const entryItems = month.entries
+    .filter((entry) => isReviewConfidence(entry.confidence))
+    .map((entry) => {
+      const weekStartDate = month.weeks.find((week) => week.id === entry.weekId)?.startDate;
 
-      if (event === undefined) {
-        return [];
-      }
-
-      if (!needsReviewItemIds.has(event.id) && !isReviewConfidence(event.confidence)) {
-        return [];
-      }
-
-      return [{ event, weekStartDate: checkpoint.weekStartDate }];
+      return {
+        amount: entry.amountUsd,
+        confidence: entry.confidence,
+        currencyCode: 'USD' as const,
+        eventCategory: entry.category,
+        id: entry.id,
+        kind: 'event' as const,
+        label: entry.label,
+        ...(entry.notes === undefined ? {} : { notes: entry.notes }),
+        reason:
+          entry.confidence === 'needsReview'
+            ? 'This entry still needs review before the weekly projection is fully trusted.'
+            : 'This entry is still estimated and should be confirmed.',
+        sourceLabel: entry.source.label,
+        ...(weekStartDate === undefined ? {} : { weekStartDate }),
+      };
     });
-  });
-}
+  const debtItems = month.debtTracks
+    .filter((debtTrack) => isReviewConfidence(debtTrack.confidence))
+    .map((debtTrack) => {
+      return {
+        amount: debtTrack.balanceUsd,
+        confidence: debtTrack.confidence,
+        currencyCode: 'USD' as const,
+        id: debtTrack.id,
+        kind: 'debt' as const,
+        label: `${debtTrack.creditor} · ${debtTrack.label}`,
+        ...(debtTrack.notes === undefined ? {} : { notes: debtTrack.notes }),
+        reason:
+          debtTrack.confidence === 'needsReview'
+            ? 'Debt details still need review before extra-payment guidance is trusted.'
+            : 'Debt details are still estimated and should be validated.',
+        sourceLabel: debtTrack.source.label,
+      };
+    });
 
-function buildEventReviewItem(candidate: ReviewEventCandidate): ReviewQueueItem {
-  return {
-    id: candidate.event.id,
-    label: candidate.event.label,
-    kind: 'event',
-    confidence: candidate.event.confidence,
-    reason:
-      candidate.event.confidence === 'needsReview'
-        ? 'This calendar event still needs manual review before treating the projection as fully trusted.'
-        : 'This calendar event is still estimated and should be confirmed against the source document.',
-    sourceLabel: candidate.event.source.label,
-    amount: candidate.event.amount,
-    currencyCode: candidate.event.currencyCode,
-    eventCategory: candidate.event.category,
-    weekStartDate: candidate.weekStartDate,
-    ...(candidate.event.notes === undefined ? {} : { notes: candidate.event.notes }),
-  };
-}
-
-function buildDebtReviewItem(debt: RealDebtRecord): ReviewQueueItem {
-  return {
-    id: debt.id,
-    label: `${debt.creditor} · ${debt.label}`,
-    kind: 'debt',
-    confidence: debt.confidence,
-    reason:
-      debt.confidence === 'needsReview'
-        ? 'Debt source data still has unresolved review work that can affect payoff safety.'
-        : 'Debt details are estimated and should be validated before relying on extra-payment guidance.',
-    sourceLabel: debt.source.label,
-    amount: debt.balance,
-    currencyCode: debt.currencyCode,
-    ...(debt.notes === undefined ? {} : { notes: debt.notes }),
-  };
-}
-
-function buildValidationReviewItem(issue: CashFlowValidationIssue): ReviewQueueItem {
-  return {
-    id: issue.id,
-    label: issue.field,
-    kind: 'validation',
-    confidence: 'needsReview',
-    reason: issue.message,
-    sourceLabel: issue.sourceLabel,
-    amount: issue.delta,
-    currencyCode: issue.currencyCode,
-    notes: `Declared ${issue.field}: ${issue.declaredValue}; computed: ${issue.computedValue}.`,
-  };
-}
-
-function buildReviewQueue(snapshot: RealDataSnapshot, calendar: CashFlowCalendarSummary): ReviewQueueItem[] {
-  const needsReviewItemIds = new Set(snapshot.needsReviewItemIds);
-  const eventItems = buildReviewEventCandidates(calendar, needsReviewItemIds).map(buildEventReviewItem);
-  const debtItems = snapshot.debtRecords
-    .filter((debt) => needsReviewItemIds.has(debt.id) || isReviewConfidence(debt.confidence))
-    .map(buildDebtReviewItem);
-  const validationItems = calendar.validationIssues.map(buildValidationReviewItem);
-
-  return [...validationItems, ...debtItems, ...eventItems].sort((leftItem, rightItem) => {
+  return [...debtItems, ...entryItems].sort((leftItem, rightItem) => {
     const confidenceRank = getConfidenceRank(leftItem.confidence) - getConfidenceRank(rightItem.confidence);
 
     if (confidenceRank !== 0) {
@@ -196,172 +157,104 @@ function buildReviewQueue(snapshot: RealDataSnapshot, calendar: CashFlowCalendar
       return kindRank;
     }
 
-    const leftWeekStartDate = leftItem.weekStartDate ?? '';
-    const rightWeekStartDate = rightItem.weekStartDate ?? '';
-
-    if (leftWeekStartDate !== rightWeekStartDate) {
-      return leftWeekStartDate.localeCompare(rightWeekStartDate);
-    }
-
     return leftItem.label.localeCompare(rightItem.label);
   });
 }
 
-function resolveAsOfWeekStartDate(checkpoints: WeeklyCashFlowCheckpoint[], asOfWeekStartDate?: string): string {
-  if (checkpoints.length === 0) {
-    return asOfWeekStartDate ?? '';
-  }
+function resolveAsOfWeekStartDate(weeks: CashFlowWorkspaceWeek[], selectedWeekId: string | null): string {
+  const matchedWeek = weeks.find((week) => week.id === selectedWeekId);
 
-  if (asOfWeekStartDate !== undefined) {
-    const matchedCheckpoint = checkpoints.find((checkpoint) => checkpoint.weekStartDate === asOfWeekStartDate);
-
-    if (matchedCheckpoint !== undefined) {
-      return matchedCheckpoint.weekStartDate;
-    }
-  }
-
-  return checkpoints[0]?.weekStartDate ?? '';
-}
-
-function resolveSafeExtraConfidence(
-  reviewQueue: ReviewQueueItem[],
-  basedOnWeekStartDate: string,
-  blockingReasons: string[],
-): FinancialDataConfidence {
-  if (blockingReasons.length > 0) {
-    return 'needsReview';
-  }
-
-  const hasEstimatedItems = reviewQueue.some((item) => {
-    if (item.confidence !== 'estimated') {
-      return false;
-    }
-
-    if (item.weekStartDate === undefined) {
-      return true;
-    }
-
-    return item.weekStartDate >= basedOnWeekStartDate;
-  });
-
-  return hasEstimatedItems ? 'estimated' : 'verified';
-}
-
-function buildSafeExtraBlockingReasons(
-  calendar: CashFlowCalendarSummary,
-  reviewQueue: ReviewQueueItem[],
-  basedOnWeekStartDate: string,
-): string[] {
-  const blockingReasons: string[] = [];
-
-  if (calendar.validationIssues.length > 0) {
-    blockingReasons.push('Declared source totals still disagree with the computed calendar totals.');
-  }
-
-  const hasNeedsReviewDebtRisk = reviewQueue.some((item) => {
-    if (item.kind !== 'debt' && item.kind !== 'event') {
-      return false;
-    }
-
-    if (item.kind === 'event' && item.weekStartDate !== undefined && item.weekStartDate < basedOnWeekStartDate) {
-      return false;
-    }
-
-    const isDebtRelatedEvent = item.kind === 'event' && item.eventCategory === 'debtPayment';
-    const isDebtItem = item.kind === 'debt';
-
-    return item.confidence === 'needsReview' && (isDebtItem || isDebtRelatedEvent);
-  });
-
-  if (hasNeedsReviewDebtRisk) {
-    blockingReasons.push('Debt-related items still need review, so safe extra payment stays locked at $0.00.');
-  }
-
-  const hasZeroAmountDebtPayment = calendar.events.some((event) => {
-    return event.category === 'debtPayment' && event.amount === 0 && event.confidence === 'needsReview';
-  });
-
-  if (hasZeroAmountDebtPayment) {
-    blockingReasons.push('At least one planned debt payment still has a zero placeholder amount.');
-  }
-
-  return blockingReasons;
+  return matchedWeek?.weekStartDate ?? weeks[0]?.weekStartDate ?? '';
 }
 
 function buildSafeExtraPaymentSummary(
-  calendar: CashFlowCalendarSummary,
+  weeks: CashFlowWorkspaceWeek[],
   reviewQueue: ReviewQueueItem[],
-  basedOnWeekStartDate: string,
+  selectedWeekId: string | null,
 ): SafeExtraPaymentSummary {
-  const currentCheckpointIndex = calendar.weeklyCheckpoints.findIndex(
-    (checkpoint) => checkpoint.weekStartDate === basedOnWeekStartDate,
-  );
-  const futureCheckpoints =
-    currentCheckpointIndex >= 0
-      ? calendar.weeklyCheckpoints.slice(currentCheckpointIndex + 1)
-      : calendar.weeklyCheckpoints;
-  const checkpointsToEvaluate = futureCheckpoints.length > 0 ? futureCheckpoints : calendar.weeklyCheckpoints;
+  const asOfWeekStartDate = resolveAsOfWeekStartDate(weeks, selectedWeekId);
+  const currentWeekIndex = weeks.findIndex((week) => week.weekStartDate === asOfWeekStartDate);
+  const remainingWeeks = currentWeekIndex >= 0 ? weeks.slice(currentWeekIndex) : weeks;
   const minimumFutureEndingBalance = roundCurrency(
-    checkpointsToEvaluate.reduce((minimumBalance, checkpoint) => {
-      return Math.min(minimumBalance, checkpoint.endingBalance);
-    }, checkpointsToEvaluate[0]?.endingBalance ?? 0),
+    remainingWeeks.reduce((minimumBalance, week) => {
+      return Math.min(minimumBalance, week.endingBalance);
+    }, remainingWeeks[0]?.endingBalance ?? 0),
   );
-  const blockingReasons = buildSafeExtraBlockingReasons(calendar, reviewQueue, basedOnWeekStartDate);
-  const confidence = resolveSafeExtraConfidence(reviewQueue, basedOnWeekStartDate, blockingReasons);
+  const blockingReasons: string[] = [];
+  const hasNeedsReviewDebt = reviewQueue.some((item) => {
+    return item.kind === 'debt' && item.confidence === 'needsReview';
+  });
+  const hasNeedsReviewDebtPayment = reviewQueue.some((item) => {
+    return item.kind === 'event' && item.eventCategory === 'debtPayment' && item.confidence === 'needsReview';
+  });
+
+  if (hasNeedsReviewDebt || hasNeedsReviewDebtPayment) {
+    blockingReasons.push('Debt-related review items still block safe extra payment guidance.');
+  }
+
+  const hasZeroDebtPayment = weeks.some((week) => {
+    return week.events.some((event) => event.category === 'debtPayment' && event.amount === 0 && event.status !== 'skipped');
+  });
+
+  if (hasZeroDebtPayment) {
+    blockingReasons.push('At least one planned debt payment still has a zero placeholder amount.');
+  }
+
+  const confidence: FinancialDataConfidence =
+    blockingReasons.length > 0
+      ? 'needsReview'
+      : reviewQueue.some((item) => item.confidence === 'estimated')
+        ? 'estimated'
+        : 'verified';
   const amount = blockingReasons.length > 0 ? 0 : Math.max(minimumFutureEndingBalance, 0);
 
   return {
     amount,
-    basedOnWeekStartDate,
+    basedOnWeekStartDate: asOfWeekStartDate,
     blockingReasons,
     confidence,
-    currencyCode: calendar.currencyCode,
+    currencyCode: 'USD',
     explanation:
       blockingReasons.length > 0
         ? 'Safe extra payment stays at zero until review blockers are cleared.'
-        : 'Safe extra payment equals the lowest projected ending balance after upcoming obligations.',
+        : 'Safe extra payment equals the lowest projected ending balance across the remaining weeks.',
     minimumFutureEndingBalance,
   };
 }
 
 function buildWorkspaceSummary(
-  calendar: CashFlowCalendarSummary,
   weeks: CashFlowWorkspaceWeek[],
   reviewQueue: ReviewQueueItem[],
 ): CashFlowWorkspaceSummary {
   return {
-    currencyCode: calendar.currencyCode,
-    totalInflow: calendar.totals.totalInflow,
-    totalOutflow: calendar.totals.totalOutflow,
-    freeMargin: calendar.totals.freeMargin,
-    totalWeeks: weeks.length,
-    totalEvents: calendar.events.length,
+    currencyCode: 'USD',
+    freeMargin: roundCurrency(weeks.reduce((sum, week) => sum + week.freeMargin, 0)),
     reviewItemCount: reviewQueue.length,
-    validationIssueCount: calendar.validationIssues.length,
+    totalEvents: weeks.reduce((sum, week) => sum + week.eventCount, 0),
+    totalInflow: roundCurrency(weeks.reduce((sum, week) => sum + week.totalInflow, 0)),
+    totalOutflow: roundCurrency(weeks.reduce((sum, week) => sum + week.totalOutflow, 0)),
+    totalWeeks: weeks.length,
+    validationIssueCount: 0,
   };
 }
 
 export function buildWeeklyCashFlowWorkspace(
-  snapshot: RealDataSnapshot,
-  startingBalance?: number,
-  asOfWeekStartDate?: string,
+  month: OperatingMonth,
+  selectedWeekId: string | null,
 ): WeeklyCashFlowWorkspace {
-  const calendar = buildCashFlowCalendar(snapshot, startingBalance);
-  const needsReviewItemIds = new Set(snapshot.needsReviewItemIds);
-  const eventMap = new Map(calendar.events.map((event) => [event.id, event]));
-  const weeks = calendar.weeklyCheckpoints.map((checkpoint) => {
-    return buildWorkspaceWeek(checkpoint, eventMap, needsReviewItemIds);
-  });
-  const reviewQueue = buildReviewQueue(snapshot, calendar);
-  const resolvedAsOfWeekStartDate = resolveAsOfWeekStartDate(calendar.weeklyCheckpoints, asOfWeekStartDate);
-  const safeExtraPayment = buildSafeExtraPaymentSummary(calendar, reviewQueue, resolvedAsOfWeekStartDate);
+  const weeks = month.weeks.reduce<CashFlowWorkspaceWeek[]>((workspaceWeeks, week) => {
+    const previousEndingBalance = workspaceWeeks[workspaceWeeks.length - 1]?.endingBalance ?? 0;
+
+    return [...workspaceWeeks, buildWorkspaceWeek(month, week.id, previousEndingBalance)];
+  }, []);
+  const reviewQueue = buildReviewQueue(month);
 
   return {
-    asOfWeekStartDate: resolvedAsOfWeekStartDate,
-    currencyCode: calendar.currencyCode,
+    asOfWeekStartDate: resolveAsOfWeekStartDate(weeks, selectedWeekId),
+    currencyCode: 'USD',
     reviewQueue,
-    safeExtraPayment,
-    summary: buildWorkspaceSummary(calendar, weeks, reviewQueue),
+    safeExtraPayment: buildSafeExtraPaymentSummary(weeks, reviewQueue, selectedWeekId),
+    summary: buildWorkspaceSummary(weeks, reviewQueue),
     weeks,
   };
 }

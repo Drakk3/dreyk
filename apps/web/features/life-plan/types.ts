@@ -32,7 +32,15 @@ export type ContingencySeverity = 'high' | 'medium' | 'low';
 
 export type PriorityActionWindow = '30d' | '90d';
 
-export type LifePlanSectionKey = 'overview' | 'cash-flow' | 'finances' | 'teaching' | 'contingencies' | 'actions';
+export type LifePlanSectionKey = 'overview' | 'cash-flow' | 'teaching' | 'actions';
+
+export type OperatingEntryKind = 'income' | 'expense' | 'debt';
+
+export type OperatingEntryStatus = 'planned' | 'done' | 'skipped';
+
+export type OperatingEntrySourceKind = 'seed' | 'generated' | 'manual';
+
+export type OperatingRecurringQueueStatus = 'pending' | 'incorporated';
 
 export interface FinancialSourceMetadata {
   label: string;
@@ -77,6 +85,98 @@ export interface WeeklyCashFlowCheckpoint {
   endingBalance: number;
   freeMargin: number;
   eventIds: string[];
+}
+
+export interface OperatingWeek {
+  entryIds: string[];
+  endDate: string;
+  id: string;
+  index: number;
+  label: string;
+  monthId: string;
+  startDate: string;
+}
+
+export interface EntryStatusHistory {
+  changedAt: string;
+  entryId: string;
+  from: OperatingEntryStatus;
+  id: string;
+  reason?: string;
+  to: OperatingEntryStatus;
+}
+
+export interface OperatingEntry {
+  amountUsd: number;
+  category: CashFlowEventCategory;
+  confidence: FinancialDataConfidence;
+  date: string;
+  debtId?: string;
+  id: string;
+  kind: OperatingEntryKind;
+  label: string;
+  notes?: string;
+  source: FinancialSourceMetadata;
+  sourceKind: OperatingEntrySourceKind;
+  status: OperatingEntryStatus;
+  weekId: string;
+}
+
+export interface OperatingRecurringTemplate {
+  amountUsd: number;
+  cadence: RecurrenceCadence;
+  category: CashFlowEventCategory;
+  confidence: FinancialDataConfidence;
+  debtId?: string;
+  id: string;
+  label: string;
+  notes?: string;
+  scheduledDay: number;
+  source: FinancialSourceMetadata;
+}
+
+export interface OperatingRecurringQueueItem {
+  amountUsd: number;
+  cadence: RecurrenceCadence;
+  category: CashFlowEventCategory;
+  confidence: FinancialDataConfidence;
+  debtId?: string;
+  entryId?: string;
+  id: string;
+  label: string;
+  notes?: string;
+  scheduledDate: string;
+  source: FinancialSourceMetadata;
+  sourceKind: OperatingEntrySourceKind;
+  status: OperatingRecurringQueueStatus;
+  templateId: string;
+  weekId: string;
+}
+
+export interface DebtTrack {
+  apr: number;
+  balanceUsd: number;
+  confidence: FinancialDataConfidence;
+  creditor: string;
+  id: string;
+  isExcludedFromPayoffLine: boolean;
+  label: string;
+  minimumPaymentUsd?: number;
+  notes?: string;
+  priority: number;
+  source: DebtSourceMetadata;
+}
+
+export interface OperatingMonth {
+  currencyCode: 'USD';
+  debtTracks: DebtTrack[];
+  entries: OperatingEntry[];
+  id: string;
+  month: string;
+  recurringQueue: OperatingRecurringQueueItem[];
+  recurringTemplates: OperatingRecurringTemplate[];
+  statusHistory: EntryStatusHistory[];
+  weeks: OperatingWeek[];
 }
 
 export interface DebtSourceMetadata extends FinancialSourceMetadata {
@@ -214,6 +314,97 @@ export interface FinancialProjection {
   resolvedCashFlow: ResolvedCashFlow;
 }
 
+export interface OperatingCurrentWeekSummary {
+  debtPaymentUsd: number;
+  doneEntryCount: number;
+  endingBalanceUsd: number;
+  freeMarginUsd: number;
+  label: string;
+  plannedEntryCount: number;
+  skippedEntryCount: number;
+  startingBalanceUsd: number;
+  totalInflowUsd: number;
+  totalOutflowUsd: number;
+  weekEndDate: string;
+  weekId: string;
+  weekStartDate: string;
+}
+
+export interface OperatingOverviewTotals {
+  coreDebtBalanceUsd: number;
+  currencyCode: 'USD';
+  debtPaymentUsd: number;
+  excludedDebtBalanceUsd: number;
+  netUsd: number;
+  nonDebtExpenseUsd: number;
+  safeExtraPaymentUsd: number;
+  totalIncomeUsd: number;
+  totalOutflowUsd: number;
+}
+
+export interface OperatingCopContextLabels {
+  locationLabel: string;
+  operationalCurrencyLabel: string;
+  teacherSalaryContextLabel: string;
+}
+
+export interface OperatingDebtListItem {
+  apr: number;
+  balanceUsd: number;
+  confidence: FinancialDataConfidence;
+  creditor: string;
+  id: string;
+  isExcludedFromPayoffLine: boolean;
+  label: string;
+  minimumPaymentUsd: number;
+  payoffLineLabel: string;
+  plannedPaymentUsd: number;
+  priority: number;
+}
+
+export interface OperatingOverviewModel {
+  copContext: OperatingCopContextLabels;
+  currentWeek: OperatingCurrentWeekSummary;
+  debtList: OperatingDebtListItem[];
+  totals: OperatingOverviewTotals;
+}
+
+export interface OperatingDebtTimelineAllocation {
+  debtId: string;
+  debtName: string;
+  endingBalanceUsd: number;
+  extraPaymentAppliedUsd: number;
+  interestAccruedUsd: number;
+  isCleared: boolean;
+  isExcludedFromPayoffLine: boolean;
+  scheduledPaymentAppliedUsd: number;
+  startingBalanceUsd: number;
+}
+
+export interface OperatingDebtTimelineMonth {
+  allocations: OperatingDebtTimelineAllocation[];
+  clearedDebtIds: string[];
+  focusDebtId: string | null;
+  focusDebtName: string | null;
+  monthIndex: number;
+  monthLabel: string;
+  remainingBudgetUsd: number;
+  totalBudgetAppliedUsd: number;
+}
+
+export interface OperatingDebtTimelineSummary {
+  assumptionLabel: string;
+  currencyCode: 'USD';
+  isDebtFreeWithinHorizon: boolean;
+  monthlyBaseDebtBudgetUsd: number;
+  monthsSimulated: number;
+  monthsToDebtFree: number | null;
+  remainingCoreDebtBalanceUsd: number;
+  remainingExcludedDebtBalanceUsd: number;
+  safeExtraPaymentUsd: number;
+  steps: OperatingDebtTimelineMonth[];
+}
+
 export interface TeachingPathSummary {
   completedMilestones: TeachingMilestone[];
   currentMilestone: TeachingMilestone | null;
@@ -227,7 +418,9 @@ export interface ContingencyPlanSummary {
 }
 
 export interface CashFlowWorkspaceWeekEvent {
+  debtId?: string;
   id: string;
+  kind: OperatingEntryKind;
   date: string;
   label: string;
   direction: CashFlowEventDirection;
@@ -237,7 +430,9 @@ export interface CashFlowWorkspaceWeekEvent {
   confidence: FinancialDataConfidence;
   isReviewRequired: boolean;
   notes?: string;
+  sourceKind: OperatingEntrySourceKind;
   sourceLabel: string;
+  status: OperatingEntryStatus;
 }
 
 export interface CashFlowWorkspaceWeek {
