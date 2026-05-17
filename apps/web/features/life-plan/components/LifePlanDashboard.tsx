@@ -20,8 +20,9 @@ import {
   LIFE_PLAN_NAV_SECTIONS,
 } from '../navigation';
 import type { LifePlanSectionKey } from '../types';
+import { ActionsSurface } from './ActionsSurface';
 import { FinancialProjectionCard } from './FinancialProjectionCard';
-import { PlaceholderSurfaceCard } from './PlaceholderSurfaceCard';
+import { TeachingSurface } from './TeachingSurface';
 import { WeeklyCashFlowWorkspace } from './WeeklyCashFlowWorkspace';
 
 interface LifePlanDashboardProps {
@@ -58,6 +59,7 @@ export function LifePlanDashboard({ initialSection, profile, role }: LifePlanDas
     operatingOverview,
     selectedOperatingWeekId,
     selectedHorizonMonths,
+    teachingPath,
   } = useLifePlanDashboard();
 
   const [activeSection, setActiveSection] = React.useState<LifePlanSectionKey>(initialSection);
@@ -95,7 +97,7 @@ export function LifePlanDashboard({ initialSection, profile, role }: LifePlanDas
     }
 
     if (activeSection === 'teaching') {
-      return 'PLACEHOLDER · TEACHING / RESERVED';
+      return 'TEACHING · RUTA CUMARAL / META';
     }
 
     if (activeSection === 'actions') {
@@ -199,22 +201,10 @@ export function LifePlanDashboard({ initialSection, profile, role }: LifePlanDas
             ) : null}
 
             {activeSection === 'teaching' ? (
-              <PlaceholderSurfaceCard
-                badgeLabel="Reserved"
-                description="Teaching will stay blank until its operating-model slice is defined."
-                subtitle="TEACHING · PLACEHOLDER"
-                title="Teaching"
-              />
+              <TeachingSurface teachingPath={teachingPath} />
             ) : null}
 
-            {activeSection === 'actions' ? (
-              <PlaceholderSurfaceCard
-                badgeLabel="Reserved"
-                description="Actions will stay blank until the next operating-model rollout picks up execution workflows."
-                subtitle="ACTIONS · PLACEHOLDER"
-                title="Actions"
-              />
-            ) : null}
+            {activeSection === 'actions' ? <ActionsSurface /> : null}
 
             <footer className="flex items-center justify-between gap-4 pb-4 pt-2 font-mono text-[10px] uppercase tracking-widest text-foreground/30">
               <span>DREYK / LIFE PLAN OPERATING MODEL</span>
