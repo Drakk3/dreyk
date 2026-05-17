@@ -1,4 +1,5 @@
 import type {
+  BuildWeeklyCashFlowWorkspaceOptions,
   CashFlowWorkspaceSummary,
   CashFlowWorkspaceWeek,
   CashFlowWorkspaceWeekEvent,
@@ -240,8 +241,9 @@ function buildWorkspaceSummary(
 
 export function buildWeeklyCashFlowWorkspace(
   month: OperatingMonth,
-  selectedWeekId: string | null,
+  options: BuildWeeklyCashFlowWorkspaceOptions = {},
 ): WeeklyCashFlowWorkspace {
+  const selectedWeekId = options.asOfWeekId ?? options.selectedWeekId ?? null;
   const weeks = month.weeks.reduce<CashFlowWorkspaceWeek[]>((workspaceWeeks, week) => {
     const previousEndingBalance = workspaceWeeks[workspaceWeeks.length - 1]?.endingBalance ?? 0;
 

@@ -373,6 +373,16 @@ export interface OperatingCurrentWeekSummary {
   weekStartDate: string;
 }
 
+export interface OperatingOverviewDateContext {
+  freshnessLabel: string;
+  isCurrentMonthAvailable: boolean;
+  overviewMonthId: string;
+  overviewMonthLabel: string;
+  overviewWeekId: string | null;
+  overviewWeekLabel: string;
+  todayIsoDate: string;
+}
+
 export interface OperatingOverviewTotals {
   coreDebtBalanceUsd: number;
   currencyCode: 'USD';
@@ -389,6 +399,46 @@ export interface OperatingCopContextLabels {
   locationLabel: string;
   operationalCurrencyLabel: string;
   teacherSalaryContextLabel: string;
+}
+
+export interface OperatingProtocoloColombiaFraming {
+  badgeLabel: string;
+  description: string;
+  title: string;
+}
+
+export interface OperatingRecurringPayDetails {
+  amountUsd: number;
+  cadenceLabel: string;
+  label: string;
+  scheduledDateLabel: string;
+}
+
+export interface OperatingDebtCardViewModel {
+  amountUsd: number;
+  aprContextLabel?: string;
+  aprLabel: string;
+  description: string;
+  id: string;
+  name: string;
+  payoffLabel: string;
+  projectedPayoffLabel?: string;
+  recurringPay: OperatingRecurringPayDetails;
+}
+
+export interface OperatingPendingWeekItem {
+  amountUsd: number;
+  id: string;
+  label: string;
+  scheduledDateLabel: string;
+}
+
+export interface OperatingPayoffSummary {
+  budgetLabel: string;
+  extraPaymentLabel: string;
+  progressLabel: string;
+  remainingBalanceLabel: string;
+  scopeLabel: string;
 }
 
 export interface OperatingDebtListItem {
@@ -408,7 +458,11 @@ export interface OperatingDebtListItem {
 export interface OperatingOverviewModel {
   copContext: OperatingCopContextLabels;
   currentWeek: OperatingCurrentWeekSummary;
-  debtList: OperatingDebtListItem[];
+  dateContext: OperatingOverviewDateContext;
+  debtCards: OperatingDebtCardViewModel[];
+  payoffSummary: OperatingPayoffSummary;
+  pendingWeekItems: OperatingPendingWeekItem[];
+  protocoloColombia: OperatingProtocoloColombiaFraming;
   totals: OperatingOverviewTotals;
 }
 
@@ -442,6 +496,7 @@ export interface OperatingDebtTimelineSummary {
   monthlyBaseDebtBudgetUsd: number;
   monthsSimulated: number;
   monthsToDebtFree: number | null;
+  payoffSummary: OperatingPayoffSummary;
   remainingCoreDebtBalanceUsd: number;
   remainingExcludedDebtBalanceUsd: number;
   safeExtraPaymentUsd: number;
@@ -527,6 +582,11 @@ export interface SafeExtraPaymentSummary {
   currencyCode: CurrencyCode;
   explanation: string;
   minimumFutureEndingBalance: number;
+}
+
+export interface BuildWeeklyCashFlowWorkspaceOptions {
+  asOfWeekId?: string | null;
+  selectedWeekId?: string | null;
 }
 
 export interface WeeklyCashFlowWorkspace {

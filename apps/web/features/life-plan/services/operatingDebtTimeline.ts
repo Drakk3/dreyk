@@ -3,6 +3,7 @@ import type {
   OperatingDebtTimelineMonth,
   OperatingDebtTimelineSummary,
   OperatingMonth,
+  OperatingPayoffSummary,
   SafeExtraPaymentSummary,
 } from '../types';
 
@@ -224,6 +225,28 @@ function getRemainingExcludedDebtBalanceUsd(states: OperatingDebtState[]): numbe
   return roundCurrency(states.filter((state) => state.isExcludedFromPayoffLine).reduce((sum, state) => sum + Math.max(state.balanceUsd, 0), 0));
 }
 
+function buildPayoffSummary(
+  monthsToDebtFree: number | null,
+  monthlyBaseDebtBudgetUsd: number,
+  remainingCoreDebtBalanceUsd: number,
+  remainingExcludedDebtBalanceUsd: number,
+  safeExtraPaymentUsd: number,
+): OperatingPayoffSummary {
+  return {
+    budgetLabel: `Recurring pay in plan: $${monthlyBaseDebtBudgetUsd.toFixed(2)} / month`,
+    extraPaymentLabel: `Safe extra pay available now: $${safeExtraPaymentUsd.toFixed(2)}`,
+    progressLabel:
+      monthsToDebtFree === null
+        ? 'Debt payoff line stays active beyond the selected horizon.'
+        : `Debt payoff line clears in about ${monthsToDebtFree} months at the current pace.`,
+    remainingBalanceLabel: `Debt still targeted for payoff: $${remainingCoreDebtBalanceUsd.toFixed(2)}`,
+    scopeLabel:
+      remainingExcludedDebtBalanceUsd > 0
+        ? `Mazda stays visible as mobility context with $${remainingExcludedDebtBalanceUsd.toFixed(2)} kept outside accelerated payoff guidance.`
+        : 'All visible debt is currently inside the accelerated payoff guidance.',
+  };
+}
+
 export function buildOperatingDebtTimeline(
   month: OperatingMonth,
   safeExtraPayment: SafeExtraPaymentSummary,
@@ -248,18 +271,29 @@ export function buildOperatingDebtTimeline(
     }
   }
 
+  const monthlyBaseDebtBudgetUsd = roundCurrency(
+    buildDebtStates(month).reduce((sum, state) => sum + Math.max(state.plannedPaymentUsd, state.minimumPaymentUsd), 0),
+  );
+  const remainingCoreDebtBalanceUsd = getRemainingCoreDebtBalanceUsd(states);
+  const remainingExcludedDebtBalanceUsd = getRemainingExcludedDebtBalanceUsd(states);
+
   return {
     assumptionLabel:
-      'Reactive USD payoff line uses planned debt payments plus safe extra cash, while Mazda stays visible but outside the core extra-payment target.',
+      'Reactive USD payoff guidance uses planned debt payments plus safe extra cash, while Mazda stays visible as mobility context outside acceleration.',
     currencyCode: 'USD',
-    isDebtFreeWithinHorizon: getRemainingCoreDebtBalanceUsd(states) <= 0,
-    monthlyBaseDebtBudgetUsd: roundCurrency(
-      buildDebtStates(month).reduce((sum, state) => sum + Math.max(state.plannedPaymentUsd, state.minimumPaymentUsd), 0),
-    ),
+    isDebtFreeWithinHorizon: remainingCoreDebtBalanceUsd <= 0,
+    monthlyBaseDebtBudgetUsd,
     monthsSimulated: steps.length,
     monthsToDebtFree,
-    remainingCoreDebtBalanceUsd: getRemainingCoreDebtBalanceUsd(states),
-    remainingExcludedDebtBalanceUsd: getRemainingExcludedDebtBalanceUsd(states),
+    payoffSummary: buildPayoffSummary(
+      monthsToDebtFree,
+      monthlyBaseDebtBudgetUsd,
+      remainingCoreDebtBalanceUsd,
+      remainingExcludedDebtBalanceUsd,
+      safeExtraPayment.amount,
+    ),
+    remainingCoreDebtBalanceUsd,
+    remainingExcludedDebtBalanceUsd,
     safeExtraPaymentUsd: safeExtraPayment.amount,
     steps,
   };

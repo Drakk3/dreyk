@@ -36,6 +36,7 @@
     "@types/node": "^22.15.17",
     "@types/react": "^18.3.23",
     "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^6.0.2",
     "jsdom": "^29.1.1",
     "tailwindcss": "^4.1.7",
     "vitest": "^4.1.6"

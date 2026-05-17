@@ -26,6 +26,10 @@ import {
   formatOperatingMonthLabel,
   shiftOperatingMonth,
 } from '../services/operatingRecurringQueue';
+import {
+  getCurrentUtcIsoDate,
+  resolveOperatingOverviewDateContext,
+} from '../services/overviewDateContext';
 import { buildOperatingOverviewModel } from '../services/operatingModelSelectors';
 import { buildTeachingPathSummary } from '../services/teachingPath';
 import { buildWeeklyCashFlowWorkspace } from '../services/weeklyCashFlowWorkspace';
@@ -142,6 +146,7 @@ export function useLifePlanDashboard(): UseLifePlanDashboardResult {
   const [selectedHorizonMonths, setSelectedHorizonMonths] = useState<PlanningHorizonMonths>(12);
   const [operatingMonthSummaries, setOperatingMonthSummaries] = useState<PersistedOperatingMonthSummary[]>([]);
   const [operatingMonths, setOperatingMonths] = useState<Record<string, OperatingMonth>>(createFallbackOperatingMonths);
+  const [todayIsoDate] = useState<string>(() => getCurrentUtcIsoDate());
 
   // 3. Derived values (useMemo)
   const orderedOperatingMonths = useMemo(() => {
@@ -184,29 +189,64 @@ export function useLifePlanDashboard(): UseLifePlanDashboardResult {
   }, [selectedHorizonMonths, selectedScenario]);
 
   const cashFlowWorkspace = useMemo(() => {
-    return buildWeeklyCashFlowWorkspace(activeOperatingMonth, operatingStoreState.selectedWeekId);
-  }, [activeOperatingMonth, operatingStoreState.selectedWeekId]);
+    return buildWeeklyCashFlowWorkspace(activeOperatingMonth, {
+      selectedWeekId: operatingStoreState.selectedCashFlowWeekId,
+    });
+  }, [activeOperatingMonth, operatingStoreState.selectedCashFlowWeekId]);
+
+  const currentOverviewMonthSummary = useMemo(() => {
+    const todayMonth = todayIsoDate.slice(0, 7);
+
+    return operatingMonthSummaries.find((summary) => summary.month === todayMonth) ?? null;
+  }, [operatingMonthSummaries, todayIsoDate]);
+
+  const currentOverviewMonth = useMemo(() => {
+    if (currentOverviewMonthSummary === null) {
+      return activeOperatingMonth.month === todayIsoDate.slice(0, 7) ? activeOperatingMonth : null;
+    }
+
+    return operatingMonths[currentOverviewMonthSummary.id] ?? null;
+  }, [activeOperatingMonth, currentOverviewMonthSummary, operatingMonths, todayIsoDate]);
+
+  const overviewDateContext = useMemo(() => {
+    return resolveOperatingOverviewDateContext({
+      activeMonth: activeOperatingMonth,
+      currentMonth: currentOverviewMonth,
+      todayIsoDate,
+    });
+  }, [activeOperatingMonth, currentOverviewMonth, todayIsoDate]);
+
+  const overviewOperatingMonth = useMemo(() => {
+    return currentOverviewMonth ?? activeOperatingMonth;
+  }, [activeOperatingMonth, currentOverviewMonth]);
+
+  const overviewWorkspace = useMemo(() => {
+    return buildWeeklyCashFlowWorkspace(overviewOperatingMonth, {
+      asOfWeekId: overviewDateContext.overviewWeekId,
+    });
+  }, [overviewDateContext.overviewWeekId, overviewOperatingMonth]);
 
   const teachingPath = useMemo(() => {
     return buildTeachingPathSummary(LIFE_PLAN_SNAPSHOT);
   }, []);
 
-  const operatingOverview = useMemo(() => {
-    return buildOperatingOverviewModel(
-      activeOperatingMonth,
-      operatingStoreState.selectedWeekId,
-      cashFlowWorkspace.safeExtraPayment,
-      LIFE_PLAN_SNAPSHOT,
-    );
-  }, [activeOperatingMonth, cashFlowWorkspace.safeExtraPayment, operatingStoreState.selectedWeekId]);
-
   const operatingDebtTimeline = useMemo(() => {
     return buildOperatingDebtTimeline(
-      activeOperatingMonth,
-      cashFlowWorkspace.safeExtraPayment,
+      overviewOperatingMonth,
+      overviewWorkspace.safeExtraPayment,
       selectedHorizonMonths,
     );
-  }, [activeOperatingMonth, cashFlowWorkspace.safeExtraPayment, selectedHorizonMonths]);
+  }, [overviewOperatingMonth, overviewWorkspace.safeExtraPayment, selectedHorizonMonths]);
+
+  const operatingOverview = useMemo(() => {
+    return buildOperatingOverviewModel(
+      overviewOperatingMonth,
+      overviewWorkspace,
+      overviewDateContext,
+      LIFE_PLAN_SNAPSHOT,
+      operatingDebtTimeline.payoffSummary,
+    );
+  }, [operatingDebtTimeline.payoffSummary, overviewDateContext, overviewOperatingMonth, overviewWorkspace]);
 
   const contingencyPlan = useMemo(() => {
     return buildContingencyPlanSummary(LIFE_PLAN_SNAPSHOT);
@@ -398,6 +438,20 @@ export function useLifePlanDashboard(): UseLifePlanDashboardResult {
       isMounted = false;
     };
   }, [createMonth, listMonths, loadMonth, saveMonth, syncLoadedOperatingMonth]);
+
+  useEffect(() => {
+    if (currentOverviewMonthSummary === null || currentOverviewMonth !== null) {
+      return;
+    }
+
+    void (async (): Promise<void> => {
+      try {
+        await ensureOperatingMonthLoaded(currentOverviewMonthSummary);
+      } catch (error: unknown) {
+        handleError(error, 'useLifePlanDashboard.ensureCurrentOverviewMonthLoaded');
+      }
+    })();
+  }, [currentOverviewMonth, currentOverviewMonthSummary, ensureOperatingMonthLoaded]);
 
   useEffect(() => {
     if (orderedOperatingMonths.length === 0) {
@@ -624,7 +678,7 @@ export function useLifePlanDashboard(): UseLifePlanDashboardResult {
     operatingDebtTimeline,
     operatingOverview,
     priorityActions: LIFE_PLAN_SNAPSHOT.priorityActions,
-    selectedOperatingWeekId: operatingStoreState.selectedWeekId,
+    selectedOperatingWeekId: operatingStoreState.selectedCashFlowWeekId,
     selectedHorizonMonths,
     selectedScenario,
     selectedScenarioId,

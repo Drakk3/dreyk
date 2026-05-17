@@ -1,19 +1,11 @@
 'use client';
 
-import * as React from 'react';
-
 import { Badge } from '@/components/thegridcn/badge';
 import { DataCard } from '@/components/thegridcn/data-card';
-import { DataTable } from '@/components/thegridcn/data-table';
 import { Select } from '@/components/thegridcn/select';
-import { TabPanel, Tabs } from '@/components/thegridcn/tabs';
-import { Tooltip } from '@/components/thegridcn/tooltip';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Separator } from '@/components/ui/separator';
 
 import { formatLifePlanCurrency } from '../services/lifePlanCurrency';
 import type {
-  OperatingDebtListItem,
   OperatingDebtTimelineSummary,
   OperatingOverviewModel,
   PlanningHorizonMonths,
@@ -25,33 +17,20 @@ interface FinancialProjectionCardProps {
   horizonOptions: PlanningHorizonMonths[];
   operatingOverview: OperatingOverviewModel;
   selectedHorizonMonths: PlanningHorizonMonths;
-  selectedMonthLabel: string;
 }
 
-interface DebtTableRow extends Record<string, unknown> {
-  aprLabel: string;
-  balanceUsd: number;
-  debtName: string;
-  minimumPaymentUsd: number;
-  payoffLineLabel: string;
-  plannedPaymentUsd: number;
-  statusLabel: string;
+interface MetricRowProps {
+  label: string;
+  value: string;
+}
+
+interface GoalCardProps {
+  description: string;
+  title: string;
 }
 
 function formatCurrency(value: number): string {
   return formatLifePlanCurrency(value, 'USD');
-}
-
-function buildDebtRows(debts: OperatingDebtListItem[]): DebtTableRow[] {
-  return debts.map((debt) => ({
-    aprLabel: `${(debt.apr * 100).toFixed(1)}%`,
-    balanceUsd: debt.balanceUsd,
-    debtName: `${debt.creditor} · ${debt.label}`,
-    minimumPaymentUsd: debt.minimumPaymentUsd,
-    payoffLineLabel: debt.payoffLineLabel,
-    plannedPaymentUsd: debt.plannedPaymentUsd,
-    statusLabel: debt.isExcludedFromPayoffLine ? 'Context only' : 'Core target',
-  }));
 }
 
 function resolveHorizon(value: string, horizonOptions: PlanningHorizonMonths[]): PlanningHorizonMonths | null {
@@ -61,12 +40,22 @@ function resolveHorizon(value: string, horizonOptions: PlanningHorizonMonths[]):
   return matchedHorizon ?? null;
 }
 
-function resolveDebtName(value: unknown): string {
-  return typeof value === 'string' ? value : '';
+function MetricRow({ label, value }: MetricRowProps): JSX.Element {
+  return (
+    <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
+      <span>{label}</span>
+      <span className="text-right text-foreground">{value}</span>
+    </div>
+  );
 }
 
-function resolveCurrencyValue(value: unknown): number {
-  return typeof value === 'number' ? value : 0;
+function GoalCard({ description, title }: GoalCardProps): JSX.Element {
+  return (
+    <div className="rounded border border-primary/20 bg-background/40 p-3">
+      <div className="text-sm font-semibold text-foreground">{title}</div>
+      <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+    </div>
+  );
 }
 
 export function FinancialProjectionCard({
@@ -75,39 +64,69 @@ export function FinancialProjectionCard({
   horizonOptions,
   operatingOverview,
   selectedHorizonMonths,
-  selectedMonthLabel,
 }: FinancialProjectionCardProps): JSX.Element {
-  const [activeTab, setActiveTab] = React.useState<string>('projection');
-  const debtRows = React.useMemo(() => buildDebtRows(operatingOverview.debtList), [operatingOverview.debtList]);
   const currentWeek = operatingOverview.currentWeek;
   const totals = operatingOverview.totals;
+  const overviewDateContext = operatingOverview.dateContext;
 
   return (
     <DataCard
-      subtitle="OVERVIEW · OPERATING MODEL"
-      title="Current-week cash + payoff line"
-      headerRight={<Badge variant="default">{selectedMonthLabel}</Badge>}
+      subtitle="OVERVIEW"
+      title="Protocolo Colombia"
+      headerRight={
+        <Badge variant={overviewDateContext.isCurrentMonthAvailable ? 'default' : 'outline'}>
+          {overviewDateContext.overviewMonthLabel}
+        </Badge>
+      }
     >
       <div className="space-y-4 p-4">
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[1fr_auto]">
-          <Select
-            label="Horizon"
-            value={String(selectedHorizonMonths)}
-            options={horizonOptions.map((option) => ({ label: `${option} meses`, value: String(option) }))}
-            onChange={(value: string) => {
-              const nextHorizon = resolveHorizon(value, horizonOptions);
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="outline">{overviewDateContext.overviewWeekLabel}</Badge>
+            <Badge variant="outline">{overviewDateContext.freshnessLabel}</Badge>
+          </div>
+          <div className="w-full max-w-[220px]">
+            <Select
+              label="Horizon"
+              value={String(selectedHorizonMonths)}
+              options={horizonOptions.map((option) => ({ label: `${option} meses`, value: String(option) }))}
+              onChange={(value: string) => {
+                const nextHorizon = resolveHorizon(value, horizonOptions);
 
-              if (nextHorizon !== null) {
-                handleHorizonChange(nextHorizon);
-              }
-            }}
-          />
-          <div className="rounded border border-border/60 bg-background/40 p-3">
-            <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/40">Safe extra payment</div>
-            <div className="mt-2 text-lg font-semibold text-foreground">
-              {formatCurrency(totals.safeExtraPaymentUsd)}
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">Extra operativo seguro sin romper balances semanales futuros.</p>
+                if (nextHorizon !== null) {
+                  handleHorizonChange(nextHorizon);
+                }
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="rounded border border-primary/25 bg-primary/5 p-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="default">{operatingOverview.protocoloColombia.badgeLabel}</Badge>
+            <Badge variant="outline">{operatingOverview.copContext.locationLabel}</Badge>
+          </div>
+          <h3 className="mt-3 text-base font-semibold text-foreground">{operatingOverview.protocoloColombia.title}</h3>
+          <p className="mt-2 text-sm text-muted-foreground">
+            This life plan is the operating system for Protocolo Colombia. Every payment, expense, and debt decision is evaluated against the same end state: zero debt, a teaching position in Cumaral or nearby, access to a mortgage, and 15,000 USD of free savings by 2029.
+          </p>
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <GoalCard
+              title="0 debt"
+              description="Remove active debt pressure and protect payoff momentum month by month."
+            />
+            <GoalCard
+              title="Teaching role in Cumaral"
+              description="Land a docente position in Cumaral or the surrounding area."
+            />
+            <GoalCard
+              title="Mortgage readiness"
+              description="Build the stability required to qualify for a home purchase."
+            />
+            <GoalCard
+              title="15k free savings by 2029"
+              description="Reach 15,000 USD in unrestricted savings by the 2029 target."
+            />
           </div>
         </div>
 
@@ -115,163 +134,136 @@ export function FinancialProjectionCard({
           <div className="rounded border border-border/60 bg-background/30 p-4">
             <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/40">Current week</div>
             <div className="mt-2 text-sm font-semibold uppercase tracking-[0.12em] text-foreground">{currentWeek.label}</div>
-            <div className="mt-3 grid gap-2 text-xs text-muted-foreground">
-              <div className="flex items-center justify-between gap-2"><span>Starting</span><span>{formatCurrency(currentWeek.startingBalanceUsd)}</span></div>
-              <div className="flex items-center justify-between gap-2"><span>Inflow</span><span>{formatCurrency(currentWeek.totalInflowUsd)}</span></div>
-              <div className="flex items-center justify-between gap-2"><span>Outflow</span><span>{formatCurrency(currentWeek.totalOutflowUsd)}</span></div>
-              <div className="flex items-center justify-between gap-2 text-primary"><span>Ending</span><span>{formatCurrency(currentWeek.endingBalanceUsd)}</span></div>
+            <div className="mt-3 space-y-2">
+              <MetricRow label="Inflow" value={formatCurrency(currentWeek.totalInflowUsd)} />
+              <MetricRow label="Outflow" value={formatCurrency(currentWeek.totalOutflowUsd)} />
+              <MetricRow label="Debt paid" value={formatCurrency(currentWeek.debtPaymentUsd)} />
+              <MetricRow label="Ending" value={formatCurrency(currentWeek.endingBalanceUsd)} />
             </div>
           </div>
 
           <div className="rounded border border-border/60 bg-background/30 p-4">
-            <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/40">USD operating totals</div>
-            <div className="mt-3 grid gap-2 text-xs text-muted-foreground">
-              <div className="flex items-center justify-between gap-2"><span>Total income</span><span>{formatCurrency(totals.totalIncomeUsd)}</span></div>
-              <div className="flex items-center justify-between gap-2"><span>Total outflow</span><span>{formatCurrency(totals.totalOutflowUsd)}</span></div>
-              <div className="flex items-center justify-between gap-2"><span>Debt payments</span><span>{formatCurrency(totals.debtPaymentUsd)}</span></div>
-              <div className="flex items-center justify-between gap-2"><span>Non-debt expenses</span><span>{formatCurrency(totals.nonDebtExpenseUsd)}</span></div>
-              <div className="flex items-center justify-between gap-2 text-primary"><span>Net month</span><span>{formatCurrency(totals.netUsd)}</span></div>
+            <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/40">Execution now</div>
+            <div className="mt-2 text-sm font-semibold uppercase tracking-[0.12em] text-foreground">
+              {currentWeek.doneEntryCount} done · {currentWeek.plannedEntryCount} pending
+            </div>
+            <div className="mt-3 space-y-2">
+              <MetricRow label="Pending items" value={String(operatingOverview.pendingWeekItems.length)} />
+              <MetricRow label="Skipped" value={String(currentWeek.skippedEntryCount)} />
+              <MetricRow label="Free margin" value={formatCurrency(currentWeek.freeMarginUsd)} />
+              <MetricRow label="Safe extra" value={formatCurrency(totals.safeExtraPaymentUsd)} />
             </div>
           </div>
 
           <div className="rounded border border-border/60 bg-background/30 p-4">
-            <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/40">Colombia context</div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Badge variant="outline">{operatingOverview.copContext.locationLabel}</Badge>
-              <Badge variant="outline">{operatingOverview.copContext.operationalCurrencyLabel}</Badge>
-              <Badge variant="outline">{operatingOverview.copContext.teacherSalaryContextLabel}</Badge>
-            </div>
-            <div className="mt-4 grid gap-2 text-xs text-muted-foreground">
-              <div className="flex items-center justify-between gap-2"><span>Core debt</span><span>{formatCurrency(totals.coreDebtBalanceUsd)}</span></div>
-              <div className="flex items-center justify-between gap-2"><span>Mazda/context debt</span><span>{formatCurrency(totals.excludedDebtBalanceUsd)}</span></div>
-              <div className="flex items-center justify-between gap-2"><span>This week debt</span><span>{formatCurrency(currentWeek.debtPaymentUsd)}</span></div>
-              <div className="flex items-center justify-between gap-2"><span>Status mix</span><span>{currentWeek.doneEntryCount} done · {currentWeek.plannedEntryCount} planned</span></div>
+            <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/40">Outlook</div>
+            <div className="mt-2 text-sm font-semibold uppercase tracking-[0.12em] text-foreground">{selectedHorizonMonths} month view</div>
+            <div className="mt-3 space-y-2">
+              <MetricRow label="Month income" value={formatCurrency(totals.totalIncomeUsd)} />
+              <MetricRow label="Month outflow" value={formatCurrency(totals.totalOutflowUsd)} />
+              <MetricRow label="Net" value={formatCurrency(totals.netUsd)} />
+              <MetricRow label="Payoff line" value={operatingOverview.payoffSummary.progressLabel} />
             </div>
           </div>
         </div>
 
-        <Tabs
-          tabs={[
-            { label: 'Overview', value: 'projection' },
-            { label: 'Payoff line', value: 'cascade' },
-          ]}
-          value={activeTab}
-          onChange={setActiveTab}
-          variant="underline"
-        >
-          <TabPanel value="projection" activeValue={activeTab} className="space-y-4">
-            <div className="space-y-4 rounded border border-border/60 bg-background/30 p-4">
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                <div>
-                  <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/40">Payoff status</div>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {debtTimeline.monthsToDebtFree === null
-                      ? 'Core debt does not clear within the selected horizon.'
-                      : `Core debt clears in ${debtTimeline.monthsToDebtFree} months.`}
-                  </p>
+        <div className="rounded border border-border/60 bg-background/30 p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/40">Current-week queue</div>
+            </div>
+            <Badge variant="outline">{operatingOverview.pendingWeekItems.length} pending</Badge>
+          </div>
+
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {operatingOverview.pendingWeekItems.length > 0 ? (
+              operatingOverview.pendingWeekItems.map((item) => (
+                <div key={item.id} className="rounded border border-border/60 bg-card/60 p-3">
+                  <div className="text-sm font-medium text-foreground">{item.label}</div>
+                  <div className="mt-2 flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                    <span>{item.scheduledDateLabel}</span>
+                    <span>{formatCurrency(item.amountUsd)}</span>
+                  </div>
                 </div>
-                <div>
-                  <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/40">Core remaining</div>
-                  <p className="mt-1 text-sm text-muted-foreground">{formatCurrency(debtTimeline.remainingCoreDebtBalanceUsd)}</p>
+              ))
+            ) : (
+              <div className="rounded border border-dashed border-border/60 bg-card/30 p-3 text-sm text-muted-foreground">
+                Nothing pending in the current week. Fantastic — the overview is caught up.
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <div>
+            <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/40">Debt cards</div>
+          </div>
+
+          <div className="grid gap-2 xl:grid-cols-2 2xl:grid-cols-3">
+            {operatingOverview.debtCards.map((debtCard) => (
+              <div key={debtCard.id} className="rounded border border-border/60 bg-background/30 p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-semibold text-foreground">{debtCard.name}</div>
+                    <p className="mt-1 text-xs text-muted-foreground">{debtCard.description}</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/40">Amount</div>
+                    <div className="mt-1 text-base font-semibold text-foreground">{formatCurrency(debtCard.amountUsd)}</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/40">Mazda excluded</div>
-                  <p className="mt-1 text-sm text-muted-foreground">{formatCurrency(debtTimeline.remainingExcludedDebtBalanceUsd)}</p>
-                </div>
-                <div>
-                  <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/40">Base debt budget</div>
-                  <p className="mt-1 text-sm text-muted-foreground">{formatCurrency(debtTimeline.monthlyBaseDebtBudgetUsd)}</p>
+
+                <div className="mt-3 grid gap-2 md:grid-cols-3">
+                  <div>
+                    <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/40">APR</div>
+                    <div className="mt-1 text-xs text-foreground">{debtCard.aprLabel}</div>
+                    {debtCard.aprContextLabel !== undefined ? (
+                      <p className="mt-1 text-xs text-muted-foreground">{debtCard.aprContextLabel}</p>
+                    ) : null}
+                  </div>
+
+                  <div>
+                    <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/40">Recurring pay</div>
+                    <div className="mt-1 text-xs text-foreground">{formatCurrency(debtCard.recurringPay.amountUsd)}</div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {debtCard.recurringPay.label} · {debtCard.recurringPay.scheduledDateLabel}
+                    </p>
+                  </div>
+
+                  <div>
+                    <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/40">Payoff</div>
+                    <div className="mt-1 text-xs text-foreground">{debtCard.payoffLabel}</div>
+                    {debtCard.projectedPayoffLabel !== undefined ? (
+                      <p className="mt-1 text-xs text-muted-foreground">{debtCard.projectedPayoffLabel}</p>
+                    ) : null}
+                  </div>
                 </div>
               </div>
+            ))}
+          </div>
+        </div>
 
-              <Separator className="bg-border/60" />
+        <div className="rounded border border-border/60 bg-background/30 p-4">
+          <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/40">Payoff highlights</div>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {debtTimeline.monthsToDebtFree === null
+              ? `At the current pace, the debt plan extends beyond ${selectedHorizonMonths} months.`
+              : `At the current pace, the core debt line reaches zero in ${debtTimeline.monthsToDebtFree} months.`}
+          </p>
 
-              <p className="text-sm text-muted-foreground">{debtTimeline.assumptionLabel}</p>
-            </div>
-          </TabPanel>
-
-          <TabPanel value="cascade" activeValue={activeTab} className="space-y-4">
-            <DataTable<DebtTableRow>
-              label="Debt portfolio"
-              data={debtRows}
-              columns={[
-                {
-                  key: 'debtName',
-                  label: 'Debt',
-                  render: (value: unknown, row: DebtTableRow) => (
-                    <Tooltip content={String(row.payoffLineLabel)}>
-                      <button type="button" className="text-left text-primary underline-offset-4 hover:underline">
-                        {resolveDebtName(value)}
-                      </button>
-                    </Tooltip>
-                  ),
-                },
-                {
-                  key: 'balanceUsd',
-                  label: 'Balance',
-                  sortable: true,
-                  align: 'right',
-                  render: (value: unknown) => formatCurrency(resolveCurrencyValue(value)),
-                },
-                {
-                  key: 'minimumPaymentUsd',
-                  label: 'Min payment',
-                  align: 'right',
-                  render: (value: unknown) => formatCurrency(resolveCurrencyValue(value)),
-                },
-                {
-                  key: 'plannedPaymentUsd',
-                  label: 'Planned',
-                  align: 'right',
-                  render: (value: unknown) => formatCurrency(resolveCurrencyValue(value)),
-                },
-                {
-                  key: 'aprLabel',
-                  label: 'APR',
-                  align: 'right',
-                },
-                {
-                  key: 'statusLabel',
-                  label: 'Scope',
-                },
-              ]}
-            />
-
-            <Accordion type="single" collapsible className="rounded border border-border/60 bg-background/30 px-4">
-              {debtTimeline.steps.map((step) => (
-                <AccordionItem key={step.monthIndex} value={`month-${step.monthIndex}`}>
-                  <AccordionTrigger className="font-mono text-xs uppercase tracking-[0.18em]">
-                    {step.monthLabel} · foco {step.focusDebtName ?? 'sin deuda core activa'} · aplicado{' '}
-                    {formatCurrency(step.totalBudgetAppliedUsd)}
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                      {step.allocations.map((allocation) => (
-                        <div key={allocation.debtId} className="rounded border border-border/60 bg-card/60 p-3">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-foreground/40">
-                              {allocation.debtName}
-                            </span>
-                            <Badge variant={allocation.isCleared ? 'success' : allocation.isExcludedFromPayoffLine ? 'outline' : 'default'}>
-                              {allocation.isCleared ? 'Cleared' : allocation.isExcludedFromPayoffLine ? 'Context only' : 'Core'}
-                            </Badge>
-                          </div>
-                          <div className="mt-2 space-y-1 text-xs text-muted-foreground">
-                            <div>Inicio: {formatCurrency(allocation.startingBalanceUsd)}</div>
-                            <div>Interés: {formatCurrency(allocation.interestAccruedUsd)}</div>
-                            <div>Base: {formatCurrency(allocation.scheduledPaymentAppliedUsd)}</div>
-                            <div>Extra: {formatCurrency(allocation.extraPaymentAppliedUsd)}</div>
-                            <div>Final: {formatCurrency(allocation.endingBalanceUsd)}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </TabPanel>
-        </Tabs>
+          <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+            {debtTimeline.steps.slice(0, 4).map((step) => (
+              <div key={step.monthIndex} className="rounded border border-border/60 bg-card/60 p-3">
+                <div className="text-sm font-semibold text-foreground">{step.monthLabel}</div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Focus: {step.focusDebtName ?? 'No active payoff target'}
+                </p>
+                <p className="mt-2 text-xs text-muted-foreground">Applied {formatCurrency(step.totalBudgetAppliedUsd)}</p>
+                <p className="mt-1 text-xs text-muted-foreground">Left {formatCurrency(step.remainingBudgetUsd)}</p>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </DataCard>
   );

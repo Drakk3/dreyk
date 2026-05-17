@@ -21,7 +21,6 @@ import {
 } from '../navigation';
 import type { LifePlanSectionKey } from '../types';
 import { FinancialProjectionCard } from './FinancialProjectionCard';
-import { LifePlanHeroCard } from './LifePlanHeroCard';
 import { PlaceholderSurfaceCard } from './PlaceholderSurfaceCard';
 import { WeeklyCashFlowWorkspace } from './WeeklyCashFlowWorkspace';
 
@@ -59,8 +58,6 @@ export function LifePlanDashboard({ initialSection, profile, role }: LifePlanDas
     operatingOverview,
     selectedOperatingWeekId,
     selectedHorizonMonths,
-    snapshot,
-    teachingPath,
   } = useLifePlanDashboard();
 
   const [activeSection, setActiveSection] = React.useState<LifePlanSectionKey>(initialSection);
@@ -105,7 +102,7 @@ export function LifePlanDashboard({ initialSection, profile, role }: LifePlanDas
       return 'PLACEHOLDER · ACTIONS / RESERVED';
     }
 
-    return 'OPERATING MODEL · OVERVIEW / USD + COP CONTEXT';
+    return 'OPERATING MODEL · OVERVIEW / TODAY-AWARE USD + COP CONTEXT';
   }, [activeSection]);
 
   return (
@@ -150,14 +147,14 @@ export function LifePlanDashboard({ initialSection, profile, role }: LifePlanDas
                 <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/40">
                   Session · {profile.display_name.toUpperCase()} / {role.toUpperCase()} · life-plan
                 </div>
-                <h1 className="mt-1 flex items-center gap-3 text-2xl uppercase tracking-[0.22em]">
-                  <span className="font-mono text-3xl text-primary">|</span>
-                  LIFE PLAN / OPERATING MODEL
-                </h1>
-                <p className="mt-1 text-sm uppercase tracking-[0.12em] text-muted-foreground">
-                  Overview y cash flow comparten el mismo mes operativo en USD.
-                </p>
-              </div>
+                 <h1 className="mt-1 flex items-center gap-3 text-2xl uppercase tracking-[0.22em]">
+                   <span className="font-mono text-3xl text-primary">|</span>
+                   LIFE PLAN / OPERATING MODEL
+                 </h1>
+                 <p className="mt-1 text-sm uppercase tracking-[0.12em] text-muted-foreground">
+                   Overview follows today by default; cash flow stays a manual USD workspace.
+                 </p>
+               </div>
 
               <Tabs
                 tabs={topTabs}
@@ -172,8 +169,6 @@ export function LifePlanDashboard({ initialSection, profile, role }: LifePlanDas
               />
             </div>
 
-            {activeSection === 'overview' ? <LifePlanHeroCard currentMilestone={teachingPath.currentMilestone} snapshot={snapshot} /> : null}
-
             {activeSection === 'overview' ? (
               <div className="grid gap-4">
                 <FinancialProjectionCard
@@ -182,7 +177,6 @@ export function LifePlanDashboard({ initialSection, profile, role }: LifePlanDas
                   horizonOptions={horizonOptions}
                   operatingOverview={operatingOverview}
                   selectedHorizonMonths={selectedHorizonMonths}
-                  selectedMonthLabel={availableOperatingMonths.find((month) => month.id === activeOperatingMonth.id)?.label ?? activeOperatingMonth.month}
                 />
               </div>
             ) : null}

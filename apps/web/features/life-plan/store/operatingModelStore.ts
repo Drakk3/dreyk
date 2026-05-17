@@ -1,6 +1,6 @@
 export interface OperatingModelStoreState {
   activeMonthId: string | null;
-  selectedWeekId: string | null;
+  selectedCashFlowWeekId: string | null;
 }
 
 export interface SetActiveMonthAction {
@@ -32,19 +32,19 @@ export type OperatingModelStoreAction =
 
 export const INITIAL_OPERATING_MODEL_STORE_STATE: OperatingModelStoreState = {
   activeMonthId: null,
-  selectedWeekId: null,
+  selectedCashFlowWeekId: null,
 };
 
-function resolveSelectedWeekId(
+function resolveSelectedCashFlowWeekId(
   availableWeekIds: string[],
   defaultWeekId: string | null,
-  selectedWeekId: string | null,
+  selectedCashFlowWeekId: string | null,
 ): string | null {
-  if (selectedWeekId === null) {
+  if (selectedCashFlowWeekId === null) {
     return defaultWeekId;
   }
 
-  return availableWeekIds.includes(selectedWeekId) ? selectedWeekId : defaultWeekId;
+  return availableWeekIds.includes(selectedCashFlowWeekId) ? selectedCashFlowWeekId : defaultWeekId;
 }
 
 export function reduceOperatingModelStoreState(
@@ -61,14 +61,18 @@ export function reduceOperatingModelStoreState(
   if (action.type === 'setSelectedWeek') {
     return {
       ...state,
-      selectedWeekId: action.weekId,
+      selectedCashFlowWeekId: action.weekId,
     };
   }
 
   if (action.type === 'syncActiveMonth') {
     return {
       activeMonthId: action.activeMonthId,
-      selectedWeekId: resolveSelectedWeekId(action.availableWeekIds, action.defaultWeekId, state.selectedWeekId),
+      selectedCashFlowWeekId: resolveSelectedCashFlowWeekId(
+        action.availableWeekIds,
+        action.defaultWeekId,
+        state.selectedCashFlowWeekId,
+      ),
     };
   }
 

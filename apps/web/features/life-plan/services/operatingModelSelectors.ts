@@ -1,20 +1,56 @@
-import type { LifePlanSnapshot } from '../types';
 import type {
+  LifePlanSnapshot,
   OperatingCurrentWeekSummary,
-  OperatingDebtListItem,
+  OperatingDebtCardViewModel,
   OperatingMonth,
+  OperatingOverviewDateContext,
   OperatingOverviewModel,
   OperatingOverviewTotals,
+  OperatingPayoffSummary,
+  OperatingPendingWeekItem,
+  OperatingRecurringPayDetails,
   SafeExtraPaymentSummary,
+  WeeklyCashFlowWorkspace,
 } from '../types';
-import { buildWeeklyCashFlowWorkspace } from './weeklyCashFlowWorkspace';
 
 function roundCurrency(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
-function buildCurrentWeekSummary(month: OperatingMonth, selectedWeekId: string | null): OperatingCurrentWeekSummary {
-  const workspace = buildWeeklyCashFlowWorkspace(month, selectedWeekId);
+function parseIsoDate(date: string): Date {
+  const [yearText, monthText, dayText] = date.split('-');
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+
+  return new Date(Date.UTC(year, month - 1, day));
+}
+
+function formatDateLabel(date: string): string {
+  return new Intl.DateTimeFormat('en-US', {
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'UTC',
+  }).format(parseIsoDate(date));
+}
+
+function formatCadenceLabel(cadence: 'weekly' | 'biweekly' | 'monthly' | 'oneTime'): string {
+  if (cadence === 'weekly') {
+    return 'Weekly';
+  }
+
+  if (cadence === 'biweekly') {
+    return 'Every 2 weeks';
+  }
+
+  if (cadence === 'monthly') {
+    return 'Monthly';
+  }
+
+  return 'One time';
+}
+
+function buildCurrentWeekSummary(workspace: WeeklyCashFlowWorkspace): OperatingCurrentWeekSummary {
   const currentWeek = workspace.weeks.find((week) => week.weekStartDate === workspace.asOfWeekStartDate) ?? workspace.weeks[0];
 
   if (currentWeek === undefined) {
@@ -99,7 +135,87 @@ function buildOperatingOverviewTotals(
   };
 }
 
-function buildDebtList(month: OperatingMonth): OperatingDebtListItem[] {
+function resolveAprDisplay(debtTrack: OperatingMonth['debtTracks'][number]): {
+  aprContextLabel?: string;
+  aprLabel: string;
+} {
+  const hasUsBankNuance = debtTrack.creditor === 'U.S. Bank' || debtTrack.notes?.includes('different rates') === true;
+
+  if (hasUsBankNuance) {
+    return {
+      aprContextLabel: 'Promo purchases and cash advances still use different rates.',
+      aprLabel: 'APR under review',
+    };
+  }
+
+  if (debtTrack.apr <= 0) {
+    return {
+      aprLabel: 'APR to confirm',
+    };
+  }
+
+  return {
+    aprLabel: `${(debtTrack.apr * 100).toFixed(2)}% APR`,
+  };
+}
+
+function resolveRecurringPay(
+  month: OperatingMonth,
+  debtId: string,
+  plannedPaymentUsd: number,
+  todayIsoDate: string,
+): OperatingRecurringPayDetails {
+  const queueItems = month.recurringQueue
+    .filter((item) => item.debtId === debtId)
+    .sort((leftItem, rightItem) => leftItem.scheduledDate.localeCompare(rightItem.scheduledDate));
+  const nextQueueItem = queueItems.find((item) => item.scheduledDate >= todayIsoDate) ?? queueItems[0];
+
+  if (nextQueueItem !== undefined) {
+    return {
+      amountUsd: nextQueueItem.amountUsd,
+      cadenceLabel: formatCadenceLabel(nextQueueItem.cadence),
+      label: `${formatCadenceLabel(nextQueueItem.cadence)} recurring pay`,
+      scheduledDateLabel: `Next ${formatDateLabel(nextQueueItem.scheduledDate)}`,
+    };
+  }
+
+  const plannedEntry = month.entries
+    .filter((entry) => entry.kind === 'debt' && entry.debtId === debtId && entry.status !== 'skipped')
+    .sort((leftEntry, rightEntry) => leftEntry.date.localeCompare(rightEntry.date))[0];
+
+  if (plannedEntry !== undefined) {
+    return {
+      amountUsd: plannedEntry.amountUsd,
+      cadenceLabel: 'This month',
+      label: 'Recurring pay already scheduled',
+      scheduledDateLabel: `Planned ${formatDateLabel(plannedEntry.date)}`,
+    };
+  }
+
+  return {
+    amountUsd: plannedPaymentUsd,
+    cadenceLabel: 'To plan',
+    label: 'Recurring pay still needs scheduling',
+    scheduledDateLabel: 'No next date loaded',
+  };
+}
+
+function buildDebtDescription(debtTrack: OperatingMonth['debtTracks'][number]): string {
+  if (debtTrack.isExcludedFromPayoffLine) {
+    return 'Visible as mobility context so work access stays protected while accelerated payoff guidance focuses elsewhere.';
+  }
+
+  if (debtTrack.notes !== undefined && debtTrack.notes.length > 0) {
+    return debtTrack.notes;
+  }
+
+  return 'Tracked in USD so weekly execution can keep the debt payoff line honest.';
+}
+
+function buildDebtCards(
+  month: OperatingMonth,
+  todayIsoDate: string,
+): OperatingDebtCardViewModel[] {
   return [...month.debtTracks]
     .sort((leftDebt, rightDebt) => {
       if (leftDebt.priority !== rightDebt.priority) {
@@ -115,46 +231,80 @@ function buildDebtList(month: OperatingMonth): OperatingDebtListItem[] {
     .map((debtTrack) => {
       const plannedPaymentUsd = roundCurrency(
         month.entries
-          .filter((entry) => {
-            return entry.debtId === debtTrack.id && entry.kind === 'debt' && entry.status !== 'skipped';
-          })
+          .filter((entry) => entry.debtId === debtTrack.id && entry.kind === 'debt' && entry.status !== 'skipped')
           .reduce((sum, entry) => sum + entry.amountUsd, 0),
       );
+      const aprDisplay = resolveAprDisplay(debtTrack);
+      const recurringPay = resolveRecurringPay(month, debtTrack.id, plannedPaymentUsd, todayIsoDate);
 
       return {
-        apr: debtTrack.apr,
-        balanceUsd: debtTrack.balanceUsd,
-        confidence: debtTrack.confidence,
-        creditor: debtTrack.creditor,
+        amountUsd: debtTrack.balanceUsd,
+        ...(aprDisplay.aprContextLabel === undefined ? {} : { aprContextLabel: aprDisplay.aprContextLabel }),
+        aprLabel: aprDisplay.aprLabel,
+        description: buildDebtDescription(debtTrack),
         id: debtTrack.id,
-        isExcludedFromPayoffLine: debtTrack.isExcludedFromPayoffLine,
-        label: debtTrack.label,
-        minimumPaymentUsd: debtTrack.minimumPaymentUsd ?? 0,
-        payoffLineLabel: debtTrack.isExcludedFromPayoffLine ? 'Outside core payoff line' : 'Core payoff line',
-        plannedPaymentUsd,
-        priority: debtTrack.priority,
-      } satisfies OperatingDebtListItem;
+        name: `${debtTrack.creditor} · ${debtTrack.label}`,
+        payoffLabel: debtTrack.isExcludedFromPayoffLine
+          ? 'Visible, but not part of accelerated payoff guidance.'
+          : 'Included in accelerated payoff guidance.',
+        ...(plannedPaymentUsd <= 0
+          ? {}
+          : { projectedPayoffLabel: `Planned pay already loaded this month: $${plannedPaymentUsd.toFixed(2)}` }),
+        recurringPay,
+      } satisfies OperatingDebtCardViewModel;
     });
+}
+
+function buildPendingWeekItems(workspace: WeeklyCashFlowWorkspace): OperatingPendingWeekItem[] {
+  const currentWeek = workspace.weeks.find((week) => week.weekStartDate === workspace.asOfWeekStartDate) ?? workspace.weeks[0];
+
+  if (currentWeek === undefined) {
+    return [];
+  }
+
+  return currentWeek.events
+    .filter((event) => event.status === 'planned')
+    .sort((leftEvent, rightEvent) => leftEvent.date.localeCompare(rightEvent.date))
+    .map((event) => ({
+      amountUsd: event.amount,
+      id: event.id,
+      label: event.label,
+      scheduledDateLabel: formatDateLabel(event.date),
+    }));
 }
 
 function buildCopContext(snapshot: LifePlanSnapshot): OperatingOverviewModel['copContext'] {
   return {
     locationLabel: snapshot.locationLabel,
-    operationalCurrencyLabel: 'Operating totals use USD only.',
-    teacherSalaryContextLabel: 'COP stays as teacher-salary context for Colombia only.',
+    operationalCurrencyLabel: 'USD is the operating default.',
+    teacherSalaryContextLabel: 'COP stays only as teacher-salary context in Colombia.',
+  };
+}
+
+function buildProtocoloColombia(snapshot: LifePlanSnapshot): OperatingOverviewModel['protocoloColombia'] {
+  return {
+    badgeLabel: 'Protocolo Colombia',
+    description:
+      'Run the plan in USD for debt execution, keep Colombia visible for the teaching path, and use the current real week to decide what gets done now.',
+    title: `${snapshot.roleGoal} · ${snapshot.locationLabel}`,
   };
 }
 
 export function buildOperatingOverviewModel(
   month: OperatingMonth,
-  selectedWeekId: string | null,
-  safeExtraPayment: SafeExtraPaymentSummary,
+  workspace: WeeklyCashFlowWorkspace,
+  dateContext: OperatingOverviewDateContext,
   snapshot: LifePlanSnapshot,
+  payoffSummary: OperatingPayoffSummary,
 ): OperatingOverviewModel {
   return {
     copContext: buildCopContext(snapshot),
-    currentWeek: buildCurrentWeekSummary(month, selectedWeekId),
-    debtList: buildDebtList(month),
-    totals: buildOperatingOverviewTotals(month, safeExtraPayment),
+    currentWeek: buildCurrentWeekSummary(workspace),
+    dateContext,
+    debtCards: buildDebtCards(month, dateContext.todayIsoDate),
+    payoffSummary,
+    pendingWeekItems: buildPendingWeekItems(workspace),
+    protocoloColombia: buildProtocoloColombia(snapshot),
+    totals: buildOperatingOverviewTotals(month, workspace.safeExtraPayment),
   };
 }

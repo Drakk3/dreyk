@@ -23,6 +23,15 @@ vi.mock('@/shared/lib/errors', () => ({
   handleError: vi.fn(),
 }));
 
+vi.mock('../services/overviewDateContext', async () => {
+  const actual = await vi.importActual<typeof import('../services/overviewDateContext')>('../services/overviewDateContext');
+
+  return {
+    ...actual,
+    getCurrentUtcIsoDate: () => '2026-05-16',
+  };
+});
+
 vi.mock('./useLifePlanPersistence', () => ({
   useLifePlanPersistence: () => ({
     createMonth: persistenceMocks.createMonth,
@@ -39,6 +48,13 @@ function createBaseMonth(): OperatingMonth {
   const seedMonth = createSeedOperatingMonth();
 
   return createInitialBootstrapMonth(buildOperatingMonthShell(seedMonth, seedMonth.month));
+}
+
+function createPersistedMonth(month: OperatingMonth, id: string): OperatingMonth {
+  return {
+    ...month,
+    id,
+  };
 }
 
 function createPersistedMonthSummary(month: OperatingMonth): PersistedOperatingMonthSummary {
@@ -92,7 +108,7 @@ describe('useLifePlanDashboard', () => {
   });
 
   it('loads the first persisted month without creating a replacement', async () => {
-    const existingMonth = createBaseMonth();
+    const existingMonth = createPersistedMonth(createBaseMonth(), '11111111-1111-4111-8111-111111111111');
 
     persistenceMocks.listMonths.mockResolvedValue([createPersistedMonthSummary(existingMonth)]);
     persistenceMocks.loadMonth.mockResolvedValue(existingMonth);
@@ -109,8 +125,11 @@ describe('useLifePlanDashboard', () => {
   });
 
   it('creates and bootstraps the next month when navigating forward', async () => {
-    const existingMonth = createBaseMonth();
-    const nextMonth = buildOperatingMonthShell(existingMonth, '2026-06');
+    const existingMonth = createPersistedMonth(createBaseMonth(), '11111111-1111-4111-8111-111111111111');
+    const nextMonth = createPersistedMonth(
+      buildOperatingMonthShell(existingMonth, '2026-06'),
+      '22222222-2222-4222-8222-222222222222',
+    );
     const persistedNextMonth = createDerivedRecurringBootstrapMonth(existingMonth, nextMonth);
 
     persistenceMocks.listMonths.mockResolvedValue([createPersistedMonthSummary(existingMonth)]);
@@ -143,8 +162,42 @@ describe('useLifePlanDashboard', () => {
     expect(result.current.availableOperatingMonths.map((month) => month.month)).toEqual(['2026-05', '2026-06']);
   });
 
+  it('keeps the overview anchored to today when cash-flow navigates into another month', async () => {
+    const existingMonth = createPersistedMonth(createBaseMonth(), '11111111-1111-4111-8111-111111111111');
+    const nextMonth = createPersistedMonth(
+      buildOperatingMonthShell(existingMonth, '2026-06'),
+      '22222222-2222-4222-8222-222222222222',
+    );
+    const persistedNextMonth = createDerivedRecurringBootstrapMonth(existingMonth, nextMonth);
+
+    persistenceMocks.listMonths.mockResolvedValue([createPersistedMonthSummary(existingMonth)]);
+    persistenceMocks.loadMonth.mockResolvedValue(existingMonth);
+    persistenceMocks.createMonth.mockResolvedValue(nextMonth);
+    persistenceMocks.saveMonth.mockResolvedValue(persistedNextMonth);
+
+    const { result } = renderHook(() => useLifePlanDashboard());
+
+    await waitFor(() => {
+      expect(result.current.activeOperatingMonth.month).toBe('2026-05');
+    });
+
+    const initialOverviewWeekId = result.current.operatingOverview.currentWeek.weekId;
+
+    act(() => {
+      result.current.handleNavigateOperatingMonth(1);
+    });
+
+    await waitFor(() => {
+      expect(result.current.activeOperatingMonth.month).toBe('2026-06');
+    });
+
+    expect(result.current.operatingOverview.dateContext.overviewMonthLabel).toBe('May 2026');
+    expect(result.current.operatingOverview.dateContext.isCurrentMonthAvailable).toBe(true);
+    expect(result.current.operatingOverview.currentWeek.weekId).toBe(initialOverviewWeekId);
+  });
+
   it('persists entry mutations through saveMonth and exposes the saved month state', async () => {
-    const existingMonth = createBaseMonth();
+    const existingMonth = createPersistedMonth(createBaseMonth(), '11111111-1111-4111-8111-111111111111');
     const createdEntryMonth = createOperatingEntry(existingMonth, {
       amountUsd: 35,
       category: 'food',
