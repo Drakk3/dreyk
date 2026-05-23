@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-import { ShieldAlert } from 'lucide-react';
+import { ArrowRight, ShieldAlert } from 'lucide-react';
 
 import { AlertBanner } from '@/components/thegridcn/alert';
 import { Button } from '@/components/ui/button';
@@ -60,15 +60,19 @@ export default async function AdminLandingPage(): Promise<JSX.Element> {
             <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-foreground/45">
               DREYK / ADMIN PANEL
             </div>
-            <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-foreground/65">
-              Placeholder shell while admin tools are being rebuilt
-            </div>
+              <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-foreground/65">Read-only launcher for admin-only tools</div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2 md:justify-end">
             <Button asChild size="sm" variant="outline">
               <Link className="font-mono text-[10px] uppercase tracking-[0.18em]" href="/">
                 Back to launcher
+              </Link>
+            </Button>
+            <Button asChild size="sm">
+              <Link className="font-mono text-[10px] uppercase tracking-[0.18em]" href="/admin/zones">
+                Open zone management
+                <ArrowRight className="size-3.5" />
               </Link>
             </Button>
           </div>
@@ -78,18 +82,19 @@ export default async function AdminLandingPage(): Promise<JSX.Element> {
           <div className="grid w-full max-w-3xl gap-6">
             <div className="space-y-3 text-center">
               <div className="font-mono text-[11px] uppercase tracking-[0.24em] text-primary">Admin surface</div>
-              <h1 className="text-3xl uppercase tracking-[0.22em] text-foreground">Panel in development</h1>
+              <h1 className="text-3xl uppercase tracking-[0.22em] text-foreground">Admin launcher</h1>
               <p className="text-sm leading-6 text-muted-foreground">
-                The launcher remains the primary shell for authenticated users. This admin route stays protected,
-                but its dedicated controls are intentionally paused until the next implementation slice.
+                This landing stays intentionally light. Destructive persisted zone CRUD now lives on its own route so the
+                admin entry remains a safe launcher instead of becoming a mixed workspace.
               </p>
             </div>
 
-            <AlertBanner
-              subtitle="Restricted access"
-              title="Admin panel is currently under development"
-              variant="warning"
-            />
+            <AlertBanner subtitle="Restricted access" title="Zone management is now available at /admin/zones" variant="warning" />
+            <div className="flex justify-center">
+              <Button asChild>
+                <Link href="/admin/zones">Go to zone management</Link>
+              </Button>
+            </div>
           </div>
         </section>
       </div>
