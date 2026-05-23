@@ -1,8 +1,14 @@
-import { OpsDashboard } from '@/features/geofencing/components/OpsDashboard';
+import { GeofencingWorkspace } from '@/features/geofencing/components/GeofencingWorkspace';
+import { getGeofencingWorkspaceSnapshot } from '@/features/geofencing/geofencingWorkspaceQuery';
+import { parseGeofencingWorkspaceFilterInput, type GeofencingWorkspaceRouteSearchParams } from '@/features/geofencing/services/geofencingWorkspaceFilters';
 import { requireAuthenticatedAppUser, type AuthUserContext } from '@/lib/auth/authContext';
 import { handleError } from '@/shared/lib/errors';
 
-export default async function GeofencingPage(): Promise<JSX.Element> {
+interface GeofencingPageProps {
+  searchParams?: GeofencingWorkspaceRouteSearchParams;
+}
+
+export default async function GeofencingPage({ searchParams }: GeofencingPageProps): Promise<JSX.Element> {
   let authUserContext: AuthUserContext;
 
   try {
@@ -12,5 +18,16 @@ export default async function GeofencingPage(): Promise<JSX.Element> {
     throw error;
   }
 
-  return <OpsDashboard profile={authUserContext.profile} role={authUserContext.role} />;
+  try {
+    const snapshot = await getGeofencingWorkspaceSnapshot({
+      filters: parseGeofencingWorkspaceFilterInput(searchParams),
+      role: authUserContext.role,
+      userId: authUserContext.userId,
+    });
+
+    return <GeofencingWorkspace profile={authUserContext.profile} role={authUserContext.role} snapshot={snapshot} />;
+  } catch (error: unknown) {
+    handleError(error, 'GeofencingPage.workspace');
+    throw error;
+  }
 }

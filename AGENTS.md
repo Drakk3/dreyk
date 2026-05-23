@@ -27,7 +27,7 @@ and by AI agents as the project conventions index.
 ### 3. Components
 
 - **REQUIRE** named exports — no default exports for components
-  - **Exception**: Next.js App Router requires default exports for `page.tsx` and `layout.tsx` — this rule does NOT apply to those files (framework constraint)
+  - **Exception**: Next.js App Router requires default exports for `page.tsx`, `layout.tsx`, `loading.tsx`, and `error.tsx` — this rule does NOT apply to those files (framework constraint)
 - **REJECT** direct `supabase` calls inside components — always go through hooks or services
 - **REJECT** `async` functions directly in event handlers — extract to hook
 - **REJECT** `console.log` — use `handleError` from `shared/lib/errors.ts` or remove before commit
