@@ -8,6 +8,23 @@
 - Follow-up refactor: instantiate a shared base `MainSideNavbar` component/template and let each feature provide its own sections via typed props.
 - Expected direction: shared template, feature-owned section definitions.
 
+## phase-4-polish
+
+- Treat `Phase 4 — Web authenticated shells` as complete for roadmap purposes, but keep a small polish backlog for non-blocking shell hardening.
+- Review role landing behavior so redirects are explicit and future module entry points do not depend on minimal fallback routing.
+- Replace remaining placeholder/admin shell copy with truthful product language once the operational modules are real.
+- Keep this work out of the critical path while `Phase 5+` geofencing recovery is underway.
+
+## phase-5-post-realignment-hardening
+
+- Create a dedicated SDD follow-up that starts only AFTER `phase-5-geofencing-contract-realignment` is implemented and archived.
+- Use that SDD to resolve the risks intentionally deferred by the Phase 5 baseline:
+  - confirm whether `mapcn` remains sufficient or whether the map canvas should drop to direct `MapLibre` control for future phases
+  - harden event-volume strategy for the geofencing read model so larger datasets do not degrade the workspace
+  - decide the first explicit admin filter surface for group/user/event slicing
+  - verify there are no leftover mock assumptions or preview-era abstractions contaminating the Phase 5 baseline
+- Treat this SDD as mandatory before beginning `Phase 6 — Zone management`, so CRUD does not build on an insufficiently hardened map/read-model foundation.
+
 ## life-plan-real-data
 
 - Replace the current mock-only financial snapshot with a normalized real-data snapshot derived from `realData/Personaldec.xlsx` and the supporting financial PDFs.
