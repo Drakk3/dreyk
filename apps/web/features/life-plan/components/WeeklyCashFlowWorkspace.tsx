@@ -29,6 +29,7 @@ import {
   buildUpdateInput,
   createDraftFromEvent,
   createEntryDraft,
+  getMonthSummaryBreakdown,
   getMonthWeekGroups,
   getPendingItemCount,
   getSelectedWeek,
@@ -54,7 +55,7 @@ interface WeeklyCashFlowWorkspaceProps {
 
 type ManualEntryMode = 'copy' | 'create';
 
-function getEntryCategoryLabel(category: CashFlowWorkspaceWeekEvent['category']): string {
+function getEntryCategoryLabel(category: string): string {
   return ENTRY_CATEGORY_OPTIONS.find((option) => option.value === category)?.label ?? category;
 }
 
@@ -92,11 +93,13 @@ export function WeeklyCashFlowWorkspace({
   const [editingEntryId, setEditingEntryId] = React.useState<string | null>(null);
   const [editingDraft, setEditingDraft] = React.useState<EntryDraftState | null>(null);
   const [isQueueExpanded, setIsQueueExpanded] = React.useState<boolean>(true);
+  const [isSummaryBreakdownExpanded, setIsSummaryBreakdownExpanded] = React.useState<boolean>(true);
   const [isManualEntryOpen, setIsManualEntryOpen] = React.useState<boolean>(false);
   const [manualEntryMode, setManualEntryMode] = React.useState<ManualEntryMode>('create');
   const [copySourceEntryId, setCopySourceEntryId] = React.useState<string>('');
   const selectedWeek = React.useMemo(() => getSelectedWeek(workspace.weeks, selectedWeekId), [selectedWeekId, workspace.weeks]);
   const monthWeekGroups = React.useMemo(() => getMonthWeekGroups(activeMonth), [activeMonth]);
+  const monthSummaryBreakdown = React.useMemo(() => getMonthSummaryBreakdown(activeMonth), [activeMonth]);
   const pendingItemCount = React.useMemo(() => getPendingItemCount(activeMonth.entries), [activeMonth.entries]);
   const copyableMonthItemOptions = React.useMemo(() => {
     return activeMonth.entries.map((entry) => ({
@@ -118,7 +121,8 @@ export function WeeklyCashFlowWorkspace({
     setManualEntryMode('create');
     setCopySourceEntryId('');
     setIsQueueExpanded(monthWeekGroups.length > 0 || isMonthEmpty);
-  }, [activeMonth, isMonthEmpty, monthWeekGroups.length]);
+    setIsSummaryBreakdownExpanded(monthSummaryBreakdown.length > 0);
+  }, [activeMonth, isMonthEmpty, monthSummaryBreakdown.length, monthWeekGroups.length]);
 
   const handleResetManualEntryModal = React.useCallback((): void => {
     setDraft(createEntryDraft(activeMonth));
@@ -246,6 +250,7 @@ export function WeeklyCashFlowWorkspace({
             ) : monthWeekGroups.length === 0 ? (
               <p className="text-sm text-muted-foreground">No items exist for this month yet.</p>
             ) : (
+              <div className="space-y-3">
               <Accordion type="single" collapsible value={isQueueExpanded ? 'recurring-queue' : ''} onValueChange={(value) => setIsQueueExpanded(value === 'recurring-queue')}>
                 <AccordionItem value="recurring-queue" className="rounded border border-border/60 bg-background/30 px-3">
                   <AccordionTrigger className="py-3 hover:no-underline">
@@ -259,12 +264,17 @@ export function WeeklyCashFlowWorkspace({
                   </AccordionTrigger>
                   <AccordionContent className="pb-3">
                     <div className="divide-y divide-border/60 border-t border-border/60 pt-3">
-                      {monthWeekGroups.map((group) => (
-                        <div key={group.weekId} className="py-3">
-                          <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/40">{group.weekLabel}</div>
-                          <div className="space-y-1.5">
-                            {group.entries.map((entry) => (
-                              <div key={entry.id} className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
+                       {monthWeekGroups.map((group) => (
+                         <div key={group.weekId} className="py-3">
+                           <div className="mb-2 flex flex-wrap items-center justify-between gap-2 font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/40">
+                             <span>{group.weekLabel}</span>
+                             <span className="text-foreground/55">
+                               Outflow {formatLifePlanCurrency(group.totalOutflow, activeMonth.currencyCode)}
+                             </span>
+                           </div>
+                           <div className="space-y-1.5">
+                             {group.entries.map((entry) => (
+                               <div key={entry.id} className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
                                 <div className="min-w-0 flex-1">
                                   <span>{entry.date}</span>
                                   <span className="mx-1.5 text-foreground/30">·</span>
@@ -283,6 +293,51 @@ export function WeeklyCashFlowWorkspace({
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>
+              {monthSummaryBreakdown.length > 0 ? (
+                <Accordion
+                  type="single"
+                  collapsible
+                  value={isSummaryBreakdownExpanded ? 'summary-breakdown' : ''}
+                  onValueChange={(value) => setIsSummaryBreakdownExpanded(value === 'summary-breakdown')}
+                >
+                  <AccordionItem value="summary-breakdown" className="rounded border border-border/60 bg-background/30 px-3">
+                    <AccordionTrigger className="py-3 hover:no-underline">
+                      <div className="space-y-1">
+                        <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/50">Type breakdown</div>
+                        <div className="text-sm font-semibold text-foreground">Income labels and outflow categories</div>
+                        <div className="text-xs text-muted-foreground">Aggregated totals keep repeated payroll labels and spending buckets easy to scan.</div>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="pb-3">
+                      <div className="divide-y divide-border/60 border-t border-border/60 pt-3">
+                        {monthSummaryBreakdown.map((section) => (
+                          <div key={section.id} className="py-3">
+                            <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/40">{section.label}</div>
+                            <div className="space-y-1.5">
+                              {section.rows.map((row) => (
+                                <div key={`${section.id}-${row.itemLabel}`} className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
+                                  <div className="min-w-0 flex-1">
+                                    <span className="font-medium text-foreground">
+                                      {row.itemType === 'income' ? row.itemLabel : getEntryCategoryLabel(row.category)}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant={row.itemType === 'income' ? 'default' : 'outline'}>
+                                      {row.itemType === 'income' ? 'income' : 'outflow'}
+                                    </Badge>
+                                    <span>{formatLifePlanCurrency(row.totalAmountUsd, activeMonth.currencyCode)}</span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              ) : null}
+              </div>
             )}
           </div>
         </DataCard>

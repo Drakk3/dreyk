@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { PanelLeft } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 
@@ -9,7 +10,9 @@ interface AppTopbarProps {
   highlightedBreadcrumbIndex?: number;
   initials: string;
   onCommandOpen: () => void;
+  onDesktopSidebarToggle?: () => void;
   statusLabel: string;
+  isDesktopSidebarOpen?: boolean;
 }
 
 export function AppTopbar({
@@ -17,7 +20,9 @@ export function AppTopbar({
   highlightedBreadcrumbIndex = 0,
   initials,
   onCommandOpen,
+  onDesktopSidebarToggle,
   statusLabel,
+  isDesktopSidebarOpen = true,
 }: AppTopbarProps): JSX.Element {
   const [now, setNow] = React.useState<Date | null>(null);
 
@@ -33,6 +38,19 @@ export function AppTopbar({
 
   return (
     <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-4 border-b border-border bg-card/80 px-5 backdrop-blur">
+      {onDesktopSidebarToggle !== undefined ? (
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          onClick={onDesktopSidebarToggle}
+          className="hidden lg:inline-flex"
+          aria-label={isDesktopSidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
+        >
+          <PanelLeft className="size-4" />
+        </Button>
+      ) : null}
+
       <div className="flex items-center gap-3">
         {breadcrumbs.map((breadcrumb, index) => {
           const isHighlighted = index === highlightedBreadcrumbIndex;

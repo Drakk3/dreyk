@@ -63,6 +63,7 @@ export function LifePlanDashboard({ initialSection, profile, role }: LifePlanDas
   } = useLifePlanDashboard();
 
   const [activeSection, setActiveSection] = React.useState<LifePlanSectionKey>(initialSection);
+  const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = React.useState<boolean>(true);
 
   const initials = getInitials(profile.display_name);
 
@@ -122,6 +123,7 @@ export function LifePlanDashboard({ initialSection, profile, role }: LifePlanDas
         activeItemKey={activeSection}
         brandName="DREYK"
         brandTagline="LIFE PLAN / OPERATING MODEL"
+        isDesktopOpen={isDesktopSidebarOpen}
         navSections={LIFE_PLAN_NAV_SECTIONS}
         onItemSelect={(key: string) => {
           if (isLifePlanSectionKey(key)) {
@@ -139,7 +141,9 @@ export function LifePlanDashboard({ initialSection, profile, role }: LifePlanDas
             highlightedBreadcrumbIndex={2}
             initials={initials}
             onCommandOpen={handleCommandMenuOpen}
+            onDesktopSidebarToggle={() => setIsDesktopSidebarOpen((currentValue) => !currentValue)}
             statusLabel={statusLabel}
+            isDesktopSidebarOpen={isDesktopSidebarOpen}
           />
 
         <main className="flex-1 overflow-y-auto">

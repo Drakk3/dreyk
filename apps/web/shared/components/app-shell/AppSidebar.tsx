@@ -20,6 +20,7 @@ interface AppSidebarProps {
   activeItemKey: string;
   brandName: string;
   brandTagline: string;
+  isDesktopOpen?: boolean;
   navSections: AppSidebarSection[];
   onItemSelect: (key: string) => void;
   userDisplayName: string;
@@ -31,6 +32,7 @@ export function AppSidebar({
   activeItemKey,
   brandName,
   brandTagline,
+  isDesktopOpen = true,
   navSections,
   onItemSelect,
   userDisplayName,
@@ -44,7 +46,7 @@ export function AppSidebar({
   };
 
   return (
-    <aside className="hidden lg:flex w-[220px] shrink-0 flex-col border-r border-border bg-card/40">
+    <aside className={`${isDesktopOpen ? 'hidden lg:flex' : 'hidden lg:hidden'} w-[220px] shrink-0 flex-col border-r border-border bg-card/40`}>
       <div className="px-5 py-5 border-b border-border/50">
         <div className="flex items-center gap-3">
           <div className="relative size-7 rounded border-thin border-primary/60 flex items-center justify-center bg-primary/10 glow-sm">
