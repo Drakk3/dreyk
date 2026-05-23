@@ -1,6 +1,6 @@
 import type { Role } from '@dreyk/shared/types/database';
 
-export type CommandSurfaceKey = 'launcher' | 'geofencing' | 'life-plan' | 'admin';
+export type CommandSurfaceKey = 'launcher' | 'geofencing' | 'life-plan' | 'fitness' | 'admin';
 
 export type AppCommandHref =
   | '/'
@@ -10,6 +10,11 @@ export type AppCommandHref =
   | '/life-plan?section=cash-flow'
   | '/life-plan?section=teaching'
   | '/life-plan?section=actions'
+  | '/fitness'
+  | '/fitness?section=juan'
+  | '/fitness?section=yasmis'
+  | '/fitness?section=nutrition'
+  | '/fitness?section=goals'
   | '/admin';
 
 export interface SharedCommandMenuItem {

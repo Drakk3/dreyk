@@ -1,6 +1,6 @@
 'use client';
 
-import { MapPinned, WalletCards } from 'lucide-react';
+import { Dumbbell, MapPinned, WalletCards } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 import type { Profile } from '@dreyk/shared/types/domain';
@@ -71,6 +71,16 @@ export function useLauncherHome({ profile, role }: UseLauncherHomeParams): UseLa
         kicker: 'Planning / Personal Ops',
         status: 'Ready now',
         title: 'Life plan',
+      },
+      {
+        ctaLabel: 'Open fitness plan',
+        description: 'Review Juan and Yasmis training blocks, nutrition tables, and plan milestones.',
+        href: '/fitness',
+        icon: Dumbbell,
+        key: 'fitness',
+        kicker: 'Health / Performance',
+        status: 'Ready now',
+        title: 'Fitness',
       },
     ],
     [],
