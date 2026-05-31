@@ -37,3 +37,25 @@ export function getSupabaseMobileClient(): SupabaseClient<Database> {
 
   return cachedClient;
 }
+
+export function createSupabaseFunctionUrl(functionName: string): string {
+  const env = getPublicEnv();
+  const baseUrl = env.supabaseUrl.endsWith('/') ? env.supabaseUrl.slice(0, -1) : env.supabaseUrl;
+
+  return `${baseUrl}/functions/v1/${functionName}`;
+}
+
+export async function getSupabaseAccessToken(): Promise<string | null> {
+  const supabase = getSupabaseMobileClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  const accessToken = session?.access_token;
+
+  if (typeof accessToken !== 'string' || accessToken.length === 0) {
+    return null;
+  }
+
+  return accessToken;
+}

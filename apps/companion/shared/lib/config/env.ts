@@ -5,10 +5,18 @@ export interface CompanionPublicEnv {
 
 type CompanionEnvName = 'EXPO_PUBLIC_SUPABASE_ANON_KEY' | 'EXPO_PUBLIC_SUPABASE_URL';
 
-function readRequiredEnv(name: CompanionEnvName): string {
-  const value = name === 'EXPO_PUBLIC_SUPABASE_ANON_KEY' ? process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY : process.env.EXPO_PUBLIC_SUPABASE_URL;
+function readEnvCandidate(candidate: unknown): string | null {
+  return typeof candidate === 'string' && candidate.length > 0 ? candidate : null;
+}
 
-  if (typeof value !== 'string' || value.length === 0) {
+function readRequiredEnv(name: CompanionEnvName): string {
+  const value = readEnvCandidate(
+    name === 'EXPO_PUBLIC_SUPABASE_ANON_KEY'
+      ? process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY
+      : process.env.EXPO_PUBLIC_SUPABASE_URL,
+  );
+
+  if (value === null) {
     throw new Error(`Missing required environment variable: ${name}`);
   }
 

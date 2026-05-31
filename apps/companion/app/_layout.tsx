@@ -2,8 +2,15 @@ import Stack from 'expo-router/stack';
 import { ActivityIndicator, Text, View } from 'react-native';
 
 import { useAuthBootstrap } from '../features/auth/hooks/useAuthBootstrap';
+import '../features/tracking/backgroundTask';
 
-export default function RootLayout(): JSX.Element {
+interface RootLayoutProps {
+  readonly unused?: never;
+}
+
+export default function RootLayout(_props: RootLayoutProps): JSX.Element {
+  void _props;
+
   const { errorMessage, isReady } = useAuthBootstrap();
 
   if (isReady === false) {
