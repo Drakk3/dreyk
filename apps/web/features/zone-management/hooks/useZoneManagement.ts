@@ -122,8 +122,10 @@ export function useZoneManagement({ adminUserId, snapshot }: UseZoneManagementPa
         });
 
       if (state.mode === 'create') {
-        // @ts-expect-error Supabase client infers `zones` write payloads as `never` in this workspace despite the generated Database type.
-        const createResult = await supabase.from('zones').insert(mapZoneMutationInputToInsertPayload(mutationInput));
+        const createResult = await supabase
+          .schema('public')
+          .from('zones')
+          .insert(mapZoneMutationInputToInsertPayload(mutationInput));
 
         if (createResult.error !== null) {
           throw createResult.error;
@@ -136,8 +138,11 @@ export function useZoneManagement({ adminUserId, snapshot }: UseZoneManagementPa
           return;
         }
 
-        // @ts-expect-error Supabase client infers `zones` write payloads as `never` in this workspace despite the generated Database type.
-        const updateResult = await supabase.from('zones').update(mapZoneMutationInputToUpdatePayload(mutationInput)).eq('id', selectedZone.id);
+        const updateResult = await supabase
+          .schema('public')
+          .from('zones')
+          .update(mapZoneMutationInputToUpdatePayload(mutationInput))
+          .eq('id', selectedZone.id);
 
         if (updateResult.error !== null) {
           throw updateResult.error;
@@ -164,8 +169,11 @@ export function useZoneManagement({ adminUserId, snapshot }: UseZoneManagementPa
     setMutationMessage(null);
 
     try {
-      // @ts-expect-error Supabase client infers `zones` write payloads as `never` in this workspace despite the generated Database type.
-      const toggleResult = await supabase.from('zones').update({ is_active: !selectedZone.isActive }).eq('id', selectedZone.id);
+      const toggleResult = await supabase
+        .schema('public')
+        .from('zones')
+        .update({ is_active: !selectedZone.isActive })
+        .eq('id', selectedZone.id);
 
       if (toggleResult.error !== null) {
         throw toggleResult.error;
@@ -202,7 +210,7 @@ export function useZoneManagement({ adminUserId, snapshot }: UseZoneManagementPa
     setMutationMessage(null);
 
     try {
-      const deleteResult = await supabase.from('zones').delete().eq('id', deleteCandidate.id);
+      const deleteResult = await supabase.schema('public').from('zones').delete().eq('id', deleteCandidate.id);
 
       if (deleteResult.error !== null) {
         throw deleteResult.error;

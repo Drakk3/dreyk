@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-import type { Database } from '@dreyk/shared/types/database';
+import type { SupabaseDatabase } from '@dreyk/shared/types/database';
 
 import { getPublicEnv } from '@/lib/config/env';
 import { handleError } from '@/shared/lib/errors';
@@ -51,7 +51,7 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     },
   };
 
-  const supabase = createServerClient<Database>(env.supabaseUrl, env.supabaseAnonKey, {
+  const supabase = createServerClient<SupabaseDatabase>(env.supabaseUrl, env.supabaseAnonKey, {
     cookies: cookieAdapter,
   });
 

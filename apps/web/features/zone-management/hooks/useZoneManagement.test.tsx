@@ -35,10 +35,12 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('@/lib/supabase/browser', () => ({
   getSupabaseBrowserClient: () => ({
-    from: () => ({
-      delete: browserMocks.remove,
-      insert: browserMocks.insert,
-      update: browserMocks.update,
+    schema: () => ({
+      from: () => ({
+        delete: browserMocks.remove,
+        insert: browserMocks.insert,
+        update: browserMocks.update,
+      }),
     }),
   }),
 }));
@@ -85,7 +87,7 @@ describe('useZoneManagement', () => {
     browserMocks.deleteEq.mockResolvedValue({ error: null });
   });
 
-  it('creates, updates, toggles, and deletes persisted zones with refresh-after-mutation', async () => {
+  it('creates and updates persisted zones with refresh-after-mutation', async () => {
     const snapshot = createSnapshot();
     const { result } = renderHook(() => useZoneManagement({ adminUserId: '11111111-1111-4111-8111-111111111111', snapshot }));
 
@@ -122,17 +124,46 @@ describe('useZoneManagement', () => {
       await result.current.handleToggleZoneActive();
     });
 
+    expect(browserMocks.updateEq).toHaveBeenCalledWith('id', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');
+    expect(navigationMocks.refresh).toHaveBeenCalledTimes(3);
+  });
+
+  it('cancels delete confirmation without deleting the selected zone', () => {
+    const snapshot = createSnapshot();
+    const { result } = renderHook(() => useZoneManagement({ adminUserId: '11111111-1111-4111-8111-111111111111', snapshot }));
+
     act(() => {
       result.current.handleDeleteRequest();
     });
+
+    expect(result.current.deleteCandidate?.id).toBe('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');
+
+    act(() => {
+      result.current.handleDismissDelete();
+    });
+
+    expect(result.current.deleteCandidate).toBeNull();
+    expect(browserMocks.deleteEq).not.toHaveBeenCalled();
+    expect(navigationMocks.refresh).not.toHaveBeenCalled();
+  });
+
+  it('deletes the selected zone only after delete confirmation is confirmed', async () => {
+    const snapshot = createSnapshot();
+    const { result } = renderHook(() => useZoneManagement({ adminUserId: '11111111-1111-4111-8111-111111111111', snapshot }));
+
+    act(() => {
+      result.current.handleDeleteRequest();
+    });
+
+    expect(browserMocks.deleteEq).not.toHaveBeenCalled();
 
     await act(async () => {
       await result.current.handleConfirmDelete();
     });
 
-    expect(browserMocks.updateEq).toHaveBeenCalledWith('id', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');
     expect(browserMocks.deleteEq).toHaveBeenCalledWith('id', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');
-    expect(navigationMocks.refresh).toHaveBeenCalledTimes(4);
+    expect(result.current.deleteCandidate).toBeNull();
+    expect(navigationMocks.refresh).toHaveBeenCalledTimes(1);
   });
 
   it('surfaces validation and error handling without mutating', async () => {

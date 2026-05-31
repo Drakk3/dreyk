@@ -560,3 +560,79 @@ export interface Database {
     CompositeTypes: Record<string, never>;
   };
 }
+
+type SupabaseCompatibleRecord<T extends object> = T & Record<string, unknown>;
+
+type SupabaseCompatibleTable<TTable> = TTable extends {
+  Insert: infer TInsert extends object;
+  Relationships: infer TRelationships;
+  Row: infer TRow extends object;
+  Update: infer TUpdate extends object;
+}
+  ? {
+      Insert: SupabaseCompatibleRecord<TInsert>;
+      Relationships: TRelationships extends unknown[] ? TRelationships : [];
+      Row: SupabaseCompatibleRecord<TRow>;
+      Update: SupabaseCompatibleRecord<TUpdate>;
+    }
+  : TTable;
+
+type SupabaseCompatibleView<TView> = TView extends {
+  Relationships: infer TRelationships;
+  Row: infer TRow extends object;
+}
+  ? TView extends {
+      Insert: infer TInsert extends object;
+      Update: infer TUpdate extends object;
+    }
+    ? {
+        Insert: SupabaseCompatibleRecord<TInsert>;
+        Relationships: TRelationships extends unknown[] ? TRelationships : [];
+        Row: SupabaseCompatibleRecord<TRow>;
+        Update: SupabaseCompatibleRecord<TUpdate>;
+      }
+    : {
+        Relationships: TRelationships extends unknown[] ? TRelationships : [];
+        Row: SupabaseCompatibleRecord<TRow>;
+      }
+  : TView;
+
+type SupabaseCompatibleFunction<TFunction> = TFunction extends {
+  Args: infer TArgs;
+  Returns: infer TReturns;
+  SetofOptions: infer TSetofOptions;
+}
+  ? {
+      Args: TArgs extends Record<string, unknown> ? TArgs : never;
+      Returns: TReturns;
+      SetofOptions: TSetofOptions;
+    }
+  : TFunction extends {
+      Args: infer TArgs;
+      Returns: infer TReturns;
+    }
+  ? {
+      Args: TArgs extends Record<string, unknown> ? TArgs : never;
+      Returns: TReturns;
+    }
+  : TFunction;
+
+export type SupabaseDatabase = {
+  [TSchemaName in keyof Database]: Database[TSchemaName] extends {
+    Functions: infer TFunctions;
+    Tables: infer TTables;
+    Views: infer TViews;
+  }
+    ? Omit<Database[TSchemaName], 'Functions' | 'Tables' | 'Views'> & {
+        Functions: {
+          [TFunctionName in keyof TFunctions]: SupabaseCompatibleFunction<TFunctions[TFunctionName]>;
+        };
+        Tables: {
+          [TTableName in keyof TTables]: SupabaseCompatibleTable<TTables[TTableName]>;
+        };
+        Views: {
+          [TViewName in keyof TViews]: SupabaseCompatibleView<TViews[TViewName]>;
+        };
+      }
+    : Database[TSchemaName];
+};
