@@ -50,6 +50,15 @@ describe('ingest-location handler', () => {
               longitude: -58.3816,
               speedMetersPerSecond: 4,
             },
+            {
+              accuracyMeters: null,
+              altitudeMeters: null,
+              capturedAt: '2026-05-31T19:00:00.000Z',
+              headingDegrees: null,
+              latitude: -34.6036,
+              longitude: -58.3815,
+              speedMetersPerSecond: null,
+            },
           ],
         }),
         headers: {
@@ -61,7 +70,7 @@ describe('ingest-location handler', () => {
     );
 
     expect(response.status).toBe(201);
-    expect(await readResponseBody(response)).toEqual({ insertedCount: 1 });
+    expect(await readResponseBody(response)).toEqual({ insertedCount: 2 });
     expect(insertedRows).toEqual([
       [
         {
@@ -69,9 +78,21 @@ describe('ingest-location handler', () => {
           altitude_meters: 12,
           captured_at: '2026-05-31T19:00:00.000Z',
           heading_degrees: 180,
+          ingest_order: 0,
           latitude: -34.6037,
           longitude: -58.3816,
           speed_meters_per_second: 4,
+          user_id: '11111111-1111-4111-8111-111111111111',
+        },
+        {
+          accuracy_meters: null,
+          altitude_meters: null,
+          captured_at: '2026-05-31T19:00:00.000Z',
+          heading_degrees: null,
+          ingest_order: 1,
+          latitude: -34.6036,
+          longitude: -58.3815,
+          speed_meters_per_second: null,
           user_id: '11111111-1111-4111-8111-111111111111',
         },
       ],

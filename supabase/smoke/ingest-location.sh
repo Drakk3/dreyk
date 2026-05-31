@@ -9,6 +9,18 @@ TEST_EMAIL="phase8-ingest@example.com"
 TEST_PASSWORD="Phase8Pass123!"
 TEST_USER_ID=""
 
+resolve_supabase_env() {
+  eval "$({ supabase status -o env || true; } | python3 -c "import sys
+for raw_line in sys.stdin:
+    line = raw_line.strip()
+    if '=' not in line:
+        continue
+    name, value = line.split('=', 1)
+    if not name.replace('_', '').isalnum():
+        continue
+    print(f'export {name}={value}')")"
+}
+
 cleanup() {
   if [[ -n "$SERVER_PID" ]]; then
     kill "$SERVER_PID" >/dev/null 2>&1 || true
@@ -26,25 +38,18 @@ SQL
 
 trap cleanup EXIT
 
-eval "$({ supabase status -o env || true; } | python3 -c "import sys
-for raw_line in sys.stdin:
-    line = raw_line.strip()
-    if '=' not in line:
-        continue
-    name, value = line.split('=', 1)
-    if not name.replace('_', '').isalnum():
-        continue
-    print(f'export {name}={value}')")"
-
-if [[ -z "${API_URL:-}" || -z "${ANON_KEY:-}" || -z "${DB_URL:-}" ]]; then
-  echo "Unable to resolve local Supabase env vars. Is 'supabase start' running?" >&2
-  exit 1
-fi
+resolve_supabase_env
 
 cd "$ROOT_DIR"
 
 supabase stop --no-backup >/dev/null 2>&1 || true
 supabase start >/dev/null
+resolve_supabase_env
+
+if [[ -z "${API_URL:-}" || -z "${ANON_KEY:-}" || -z "${DB_URL:-}" ]]; then
+  echo "Unable to resolve local Supabase env vars after startup." >&2
+  exit 1
+fi
 
 supabase functions serve ingest-location --no-verify-jwt >"$EDGE_LOG_FILE" 2>&1 &
 SERVER_PID="$!"
@@ -126,9 +131,17 @@ if [[ "$VALID_STATUS" != "201" ]]; then
 fi
 
 INSERT_COUNT="$(psql "$DB_URL" -Atc "select count(*) from public.tracking_points where user_id = '$TEST_USER_ID';")"
+LOCATION_EVENT_COUNT="$(psql "$DB_URL" -Atc "select count(*) from public.location_events where user_id = '$TEST_USER_ID';")"
+CURSOR_COUNT="$(psql "$DB_URL" -Atc "select count(*) from public.tracking_user_cursors where user_id = '$TEST_USER_ID';")"
+PRESENCE_COUNT="$(psql "$DB_URL" -Atc "select count(*) from public.user_zone_presence where user_id = '$TEST_USER_ID';")"
 
 if [[ "$INSERT_COUNT" != "1" ]]; then
   echo "Expected 1 tracking row after valid ingest, got $INSERT_COUNT" >&2
+  exit 1
+fi
+
+if [[ "$LOCATION_EVENT_COUNT" != "0" || "$CURSOR_COUNT" != "0" || "$PRESENCE_COUNT" != "0" ]]; then
+  echo "ingest-location must remain raw-only. events=$LOCATION_EVENT_COUNT cursors=$CURSOR_COUNT presence=$PRESENCE_COUNT" >&2
   exit 1
 fi
 
@@ -144,9 +157,17 @@ if [[ "$INVALID_STATUS" != "401" ]]; then
 fi
 
 FINAL_COUNT="$(psql "$DB_URL" -Atc "select count(*) from public.tracking_points where user_id = '$TEST_USER_ID';")"
+FINAL_EVENT_COUNT="$(psql "$DB_URL" -Atc "select count(*) from public.location_events where user_id = '$TEST_USER_ID';")"
+FINAL_CURSOR_COUNT="$(psql "$DB_URL" -Atc "select count(*) from public.tracking_user_cursors where user_id = '$TEST_USER_ID';")"
+FINAL_PRESENCE_COUNT="$(psql "$DB_URL" -Atc "select count(*) from public.user_zone_presence where user_id = '$TEST_USER_ID';")"
 
 if [[ "$FINAL_COUNT" != "1" ]]; then
   echo "Invalid auth request should not insert rows. Count is $FINAL_COUNT" >&2
+  exit 1
+fi
+
+if [[ "$FINAL_EVENT_COUNT" != "0" || "$FINAL_CURSOR_COUNT" != "0" || "$FINAL_PRESENCE_COUNT" != "0" ]]; then
+  echo "ingest-location invalid auth path must not touch detection state. events=$FINAL_EVENT_COUNT cursors=$FINAL_CURSOR_COUNT presence=$FINAL_PRESENCE_COUNT" >&2
   exit 1
 fi
 
