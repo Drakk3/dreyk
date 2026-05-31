@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "Dreyk Companion",
+    "slug": "dreyk-companion",
+    "experiments": {
+      "autolinkingModuleResolution": true
+    },
+    "plugins": [
+      "expo-router",
+      "expo-asset"
+    ]
+  }
+}
