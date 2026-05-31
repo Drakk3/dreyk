@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-empty-object-type */
+
 import type {
   AlexaTriggerRow,
   GroupMemberRow,
@@ -5,6 +7,7 @@ import type {
   LocationEventRow,
   ModuleRow,
   ProfileRow,
+  TrackingPointRow,
   UserPermissionRow,
   ZoneRow,
 } from './database';
@@ -26,3 +29,5 @@ export interface AlexaTrigger extends AlexaTriggerRow {}
 export interface LocationEvent extends LocationEventRow {}
 
 export interface Module extends ModuleRow {}
+
+export interface TrackingPoint extends TrackingPointRow {}

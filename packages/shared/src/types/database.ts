@@ -110,6 +110,20 @@ export interface LocationEventRow {
   zone_id: string;
 }
 
+export interface TrackingPointRow {
+  accuracy_meters: number | null;
+  altitude_meters: number | null;
+  captured_at: string;
+  heading_degrees: number | null;
+  id: string;
+  latitude: number;
+  longitude: number;
+  processed_at: string | null;
+  received_at: string;
+  speed_meters_per_second: number | null;
+  user_id: string;
+}
+
 export interface ModuleRow {
   config: Json;
   id: string;
@@ -348,6 +362,36 @@ export interface Database {
           triggered_at?: string;
           user_id?: string;
           zone_id?: string;
+        };
+        Relationships: [];
+      };
+      tracking_points: {
+        Row: TrackingPointRow;
+        Insert: {
+          accuracy_meters?: number | null;
+          altitude_meters?: number | null;
+          captured_at: string;
+          heading_degrees?: number | null;
+          id?: string;
+          latitude: number;
+          longitude: number;
+          processed_at?: string | null;
+          received_at?: string;
+          speed_meters_per_second?: number | null;
+          user_id: string;
+        };
+        Update: {
+          accuracy_meters?: number | null;
+          altitude_meters?: number | null;
+          captured_at?: string;
+          heading_degrees?: number | null;
+          id?: string;
+          latitude?: number;
+          longitude?: number;
+          processed_at?: string | null;
+          received_at?: string;
+          speed_meters_per_second?: number | null;
+          user_id?: string;
         };
         Relationships: [];
       };
