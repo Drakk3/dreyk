@@ -10,6 +10,9 @@
   "scripts": {
     "dev": "turbo dev",
     "lint": "turbo lint",
+    "smoke:ingest-location": "./supabase/smoke/ingest-location.sh",
+    "smoke:tracking-points-retention": "psql \"postgresql://postgres:postgres@127.0.0.1:54322/postgres\" -f \"supabase/smoke/tracking_points_retention.sql\"",
+    "test:functions": "vitest run --config supabase/functions/vitest.config.ts",
     "typecheck": "turbo typecheck",
     "build": "turbo build",
     "format": "prettier --check .",
@@ -22,6 +25,7 @@
     "eslint-config-prettier": "^10.1.2",
     "prettier": "^3.5.3",
     "turbo": "^2.5.0",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vitest": "^4.1.6"
   }
 }

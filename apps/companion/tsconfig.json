@@ -12,6 +12,8 @@
     "features/**/*.d.ts",
     "shared/**/*.ts",
     "shared/**/*.tsx",
-    "shared/**/*.d.ts"
+    "shared/**/*.d.ts",
+    "vitest.config.ts",
+    "vitest.setup.ts"
   ]
 }
