@@ -2,10 +2,36 @@
   "name": "@dreyk/companion",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
+  "main": "./index.js",
   "scripts": {
-    "dev": "node --eval \"process.stdout.write('apps/companion Phase 0 shell only\\n')\"",
+    "dev": "expo start",
+    "start": "expo start --clear",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc -p tsconfig.json --pretty false",
     "build": "node --eval \"process.stdout.write('apps/companion build is intentionally deferred beyond Phase 0\\n')\""
+  },
+  "dependencies": {
+    "@dreyk/shared": "*",
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "@supabase/supabase-js": "^2.49.8",
+    "expo": "^54.0.0",
+    "expo-asset": "~12.0.13",
+    "expo-constants": "~18.0.13",
+    "expo-linking": "~8.0.12",
+    "expo-router": "~6.0.24",
+    "expo-status-bar": "~3.0.9",
+    "react": "19.1.0",
+    "react-native": "0.81.5",
+    "react-native-gesture-handler": "~2.28.0",
+    "react-native-safe-area-context": "~5.6.0",
+    "react-native-screens": "~4.16.0",
+    "react-native-url-polyfill": "^2.0.0",
+    "zustand": "^5.0.8"
+  },
+  "devDependencies": {
+    "babel-preset-expo": "~54.0.11",
+    "@types/node": "^22.15.17",
+    "@types/react": "~19.1.10"
   }
 }
