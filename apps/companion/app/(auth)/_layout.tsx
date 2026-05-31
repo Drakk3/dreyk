@@ -1,8 +1,9 @@
 import { Redirect } from 'expo-router';
+import Stack from 'expo-router/stack';
 
-import { useAuthStore } from '../features/auth/store/authStore';
+import { useAuthStore } from '../../features/auth/store/authStore';
 
-export default function CompanionIndexRoute(): JSX.Element | null {
+export default function AuthLayout(): JSX.Element | null {
   const status = useAuthStore((state) => state.status);
 
   if (status === 'hydrating') {
@@ -13,5 +14,5 @@ export default function CompanionIndexRoute(): JSX.Element | null {
     return <Redirect href="/(main)" />;
   }
 
-  return <Redirect href="/(auth)/sign-in" />;
+  return <Stack screenOptions={{ headerShown: false }} />;
 }

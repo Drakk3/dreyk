@@ -2,6 +2,7 @@
   "expo": {
     "name": "Dreyk Companion",
     "slug": "dreyk-companion",
+    "scheme": "dreykcompanion",
     "experiments": {
       "autolinkingModuleResolution": true
     },
