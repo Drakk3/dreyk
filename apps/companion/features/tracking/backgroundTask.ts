@@ -81,7 +81,7 @@ async function uploadTrackingPayload(
 
 if (TaskManager.isTaskDefined(TRACKING_TASK_NAME) === false) {
   TaskManager.defineTask(TRACKING_TASK_NAME, async ({ data, error }) => {
-    if (typeof error !== 'undefined') {
+    if (error != null) {
       handleError(error, 'tracking.backgroundTask.defineTask');
       setTrackingErrorMessage('Background tracking reported an unexpected task error.');
       return;
