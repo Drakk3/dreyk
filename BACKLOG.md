@@ -56,3 +56,9 @@
 
 - Fix the workspace lint blocker caused by the missing `react-hooks/exhaustive-deps` rule definition in `apps/web/components/thegridcn/progress-ring.tsx` so `npm run lint -w @dreyk/web` can pass end-to-end again.
 - Run a focused cleanup pass on general TypeScript errors/debt across the web workspace, prioritizing strict typing regressions and cross-file contract drift before they affect future feature work.
+
+## phase-9-detection-engine
+
+- Rework candidate-user claiming in `process_tracking_points_batch()` so advisory-lock misses do not consume the effective `user_batch_limit` and starve later eligible users under cron overlap.
+- Decouple invalid `user_zone_presence` cleanup from fresh-point arrival so zone deactivation or membership loss cannot leave stale presence state that suppresses future legitimate `enter` events.
+- Treat both items above as accepted operational caveats for now, but resolve them before heavier production load or more dynamic admin/group changes.
