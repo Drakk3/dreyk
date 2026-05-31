@@ -116,12 +116,29 @@ export interface TrackingPointRow {
   captured_at: string;
   heading_degrees: number | null;
   id: string;
+  ingest_order: number;
   latitude: number;
   longitude: number;
   processed_at: string | null;
   received_at: string;
   speed_meters_per_second: number | null;
   user_id: string;
+}
+
+export interface TrackingUserCursorRow {
+  last_captured_at: string;
+  last_ingest_order: number;
+  last_point_id: string;
+  last_received_at: string;
+  updated_at: string;
+  user_id: string;
+}
+
+export interface UserZonePresenceRow {
+  entered_at: string;
+  last_point_id: string;
+  user_id: string;
+  zone_id: string;
 }
 
 export interface ModuleRow {
@@ -373,6 +390,7 @@ export interface Database {
           captured_at: string;
           heading_degrees?: number | null;
           id?: string;
+          ingest_order?: number;
           latitude: number;
           longitude: number;
           processed_at?: string | null;
@@ -386,12 +404,49 @@ export interface Database {
           captured_at?: string;
           heading_degrees?: number | null;
           id?: string;
+          ingest_order?: number;
           latitude?: number;
           longitude?: number;
           processed_at?: string | null;
           received_at?: string;
           speed_meters_per_second?: number | null;
           user_id?: string;
+        };
+        Relationships: [];
+      };
+      tracking_user_cursors: {
+        Row: TrackingUserCursorRow;
+        Insert: {
+          last_captured_at: string;
+          last_ingest_order: number;
+          last_point_id: string;
+          last_received_at: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          last_captured_at?: string;
+          last_ingest_order?: number;
+          last_point_id?: string;
+          last_received_at?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      user_zone_presence: {
+        Row: UserZonePresenceRow;
+        Insert: {
+          entered_at: string;
+          last_point_id: string;
+          user_id: string;
+          zone_id: string;
+        };
+        Update: {
+          entered_at?: string;
+          last_point_id?: string;
+          user_id?: string;
+          zone_id?: string;
         };
         Relationships: [];
       };

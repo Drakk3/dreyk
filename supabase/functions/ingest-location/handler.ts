@@ -25,6 +25,7 @@ export interface TrackingPointInsertRow {
   altitude_meters: number | null;
   captured_at: string;
   heading_degrees: number | null;
+  ingest_order: number;
   latitude: number;
   longitude: number;
   speed_meters_per_second: number | null;
@@ -147,11 +148,12 @@ export function parseTrackingIngestRequestBody(value: unknown): TrackingIngestRe
 }
 
 export function createTrackingPointInsertRows(points: TrackingUploadPayload[], userId: string): TrackingPointInsertRow[] {
-  return points.map((point) => ({
+  return points.map((point, index) => ({
     accuracy_meters: point.accuracyMeters,
     altitude_meters: point.altitudeMeters,
     captured_at: point.capturedAt,
     heading_degrees: point.headingDegrees,
+    ingest_order: index,
     latitude: point.latitude,
     longitude: point.longitude,
     speed_meters_per_second: point.speedMetersPerSecond,
@@ -162,6 +164,8 @@ export function createTrackingPointInsertRows(points: TrackingUploadPayload[], u
 export function createTrackingIngestHandler(
   dependencies: TrackingIngestDependencies,
 ): (request: Request) => Promise<Response> {
+  // Phase 8/9 contract boundary: this function stores raw tracking_points only.
+  // Detection scheduling, location_events derivation, and downstream fan-out stay in Postgres or later phases.
   return async (request: Request): Promise<Response> => {
     if (request.method !== 'POST') {
       return createJsonResponse({ error: 'Method not allowed.' }, 405);

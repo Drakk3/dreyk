@@ -1,6 +1,7 @@
 create table public.tracking_points (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles(id) on delete cascade,
+  ingest_order integer not null default 0,
   latitude double precision not null,
   longitude double precision not null,
   accuracy_meters double precision,
@@ -13,10 +14,10 @@ create table public.tracking_points (
 );
 
 create index tracking_points_user_captured_idx
-  on public.tracking_points (user_id, captured_at desc, id desc);
+  on public.tracking_points (user_id, captured_at desc, received_at desc, ingest_order desc, id desc);
 
 create index tracking_points_unprocessed_idx
-  on public.tracking_points (processed_at, captured_at, id);
+  on public.tracking_points (processed_at, captured_at, received_at, ingest_order, id);
 
 alter table public.tracking_points enable row level security;
 
