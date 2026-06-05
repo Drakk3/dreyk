@@ -2,8 +2,10 @@
 
 import { DataCard } from '@/components/thegridcn/data-card';
 import { GeofencingMapCanvas } from '@/shared/geofencing/GeofencingMapCanvas';
+import { RealtimeSnapshotRefreshBridge } from '@/shared/realtime/RealtimeSnapshotRefreshBridge';
 import { ZoneDetailsPanel } from '@/shared/geofencing/ZoneDetailsPanel';
 
+import { ZONE_MANAGEMENT_REALTIME_REFRESH_CONFIG } from '../realtime';
 import { useZoneManagement } from '../hooks/useZoneManagement';
 import type { ZoneManagementSnapshot } from '../types';
 import { ZoneDeleteConfirmation } from './ZoneDeleteConfirmation';
@@ -38,6 +40,7 @@ export function ZoneManagementWorkspace({ adminDisplayName, adminUserId, snapsho
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
+      <RealtimeSnapshotRefreshBridge config={ZONE_MANAGEMENT_REALTIME_REFRESH_CONFIG} />
       <header className="space-y-3">
         <div className="font-mono text-[11px] uppercase tracking-[0.24em] text-primary">Admin-only zone management</div>
         <div className="flex flex-wrap items-end justify-between gap-4">

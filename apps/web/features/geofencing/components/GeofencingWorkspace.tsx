@@ -13,10 +13,12 @@ import type { SharedCommandMenuItem } from '@/shared/command-center/types';
 import { AppSidebar } from '@/shared/components/app-shell/AppSidebar';
 import { AppTopbar } from '@/shared/components/app-shell/AppTopbar';
 import { GeofencingMapCanvas } from '@/shared/geofencing/GeofencingMapCanvas';
+import { RealtimeSnapshotRefreshBridge } from '@/shared/realtime/RealtimeSnapshotRefreshBridge';
 import { ZoneDetailsPanel } from '@/shared/geofencing/ZoneDetailsPanel';
 
 import { useGeofencingWorkspace } from '../hooks/useGeofencingWorkspace';
 import { GEOFENCING_COMMANDS, GEOFENCING_NAV_SECTIONS } from '../navigation';
+import { GEOFENCING_REALTIME_REFRESH_CONFIG } from '../realtime';
 import type { GeofencingPanelFocus, GeofencingWorkspaceSnapshot } from '../types';
 import { EventsPanel } from './EventsPanel';
 
@@ -84,6 +86,7 @@ export function GeofencingWorkspace({ profile, role, snapshot }: GeofencingWorks
 
   return (
     <div className="relative flex min-h-screen overflow-hidden bg-background">
+      <RealtimeSnapshotRefreshBridge config={GEOFENCING_REALTIME_REFRESH_CONFIG} />
       <div className="pointer-events-none fixed inset-0 circuit-bg" />
       <div
         className="pointer-events-none fixed inset-0"
