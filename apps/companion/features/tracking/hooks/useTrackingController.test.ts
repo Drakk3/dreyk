@@ -1,4 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
+import type { RenderHookResult } from '@testing-library/react';
 import type { Session } from '@supabase/supabase-js';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -77,6 +78,15 @@ function setAuthenticatedAuthState(): void {
   authStoreState.status = 'authenticated';
 }
 
+function renderTrackingController(): RenderHookResult<ReturnType<typeof useTrackingController>, void> {
+  return renderHook(() =>
+    useTrackingController({
+      hasSession: authStoreState.session !== null,
+      isAuthenticated: authStoreState.status === 'authenticated',
+    }),
+  );
+}
+
 describe('useTrackingController', () => {
   beforeEach(() => {
     resetTrackingStore();
@@ -103,7 +113,7 @@ describe('useTrackingController', () => {
   it('stays inactive by default until the user explicitly starts tracking', async () => {
     setAuthenticatedAuthState();
 
-    const { result } = renderHook(() => useTrackingController());
+    const { result } = renderTrackingController();
 
     await waitFor(() => {
       expect(result.current.permissionStatus).toBe('unknown');
@@ -119,7 +129,7 @@ describe('useTrackingController', () => {
     setAuthenticatedAuthState();
     runtimeMocks.requestTrackingPermissions.mockResolvedValue('denied');
 
-    const { result } = renderHook(() => useTrackingController());
+    const { result } = renderTrackingController();
 
     await waitFor(() => {
       expect(result.current.permissionStatus).toBe('unknown');
@@ -135,7 +145,7 @@ describe('useTrackingController', () => {
   });
 
   it('blocks start when no authenticated session exists', async () => {
-    const { result } = renderHook(() => useTrackingController());
+    const { result } = renderTrackingController();
 
     await waitFor(() => {
       expect(result.current.permissionStatus).toBe('unknown');
@@ -154,7 +164,7 @@ describe('useTrackingController', () => {
     setAuthenticatedAuthState();
     runtimeMocks.getTrackingPermissionStatus.mockResolvedValue('granted');
 
-    const { result } = renderHook(() => useTrackingController());
+    const { result } = renderTrackingController();
 
     await waitFor(() => {
       expect(result.current.permissionStatus).toBe('granted');
