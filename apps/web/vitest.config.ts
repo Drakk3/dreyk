@@ -12,7 +12,7 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
-    include: ['features/**/*.test.ts', 'features/**/*.test.tsx'],
+    include: ['features/**/*.test.ts', 'features/**/*.test.tsx', 'shared/**/*.test.ts', 'shared/**/*.test.tsx'],
     setupFiles: ['./vitest.setup.ts'],
   },
 });

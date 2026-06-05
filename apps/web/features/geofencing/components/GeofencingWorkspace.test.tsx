@@ -1,9 +1,36 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Profile } from '@dreyk/shared/types/domain';
 
 import { GeofencingWorkspace } from './GeofencingWorkspace';
+import type { GeofencingWorkspaceSnapshot } from '../types';
+
+interface SelectMockOption {
+  label: string;
+  value: string;
+}
+
+interface SelectMockProps {
+  disabled?: boolean;
+  label?: string;
+  onChange?: (value: string) => void;
+  options: SelectMockOption[];
+  placeholder?: string;
+  value?: string;
+}
+
+interface MapCanvasMockProps {
+  zones: Array<{ name: string }>;
+}
+
+interface RealtimeBridgeMockProps {
+  config: { scope: string };
+}
+
+const bridgeMocks = vi.hoisted(() => ({
+  render: vi.fn<(scope: string) => void>(),
+}));
 
 vi.mock('@/shared/hooks/useAuthSignOut', () => ({
   useAuthSignOut: () => ({
@@ -42,14 +69,7 @@ vi.mock('@/components/thegridcn/select', () => ({
     options,
     placeholder,
     value = '',
-  }: {
-    disabled?: boolean;
-    label?: string;
-    onChange?: (value: string) => void;
-    options: Array<{ label: string; value: string }>;
-    placeholder?: string;
-    value?: string;
-  }) => (
+  }: SelectMockProps) => (
     <label>
       <span>{label}</span>
       <select
@@ -70,7 +90,14 @@ vi.mock('@/components/thegridcn/select', () => ({
 }));
 
 vi.mock('@/shared/geofencing/GeofencingMapCanvas', () => ({
-  GeofencingMapCanvas: ({ zones }: { zones: Array<{ name: string }> }) => <div>Map canvas · {zones.length} zones</div>,
+  GeofencingMapCanvas: ({ zones }: MapCanvasMockProps) => <div>Map canvas · {zones.length} zones</div>,
+}));
+
+vi.mock('@/shared/realtime/RealtimeSnapshotRefreshBridge', () => ({
+  RealtimeSnapshotRefreshBridge: ({ config }: RealtimeBridgeMockProps) => {
+    bridgeMocks.render(config.scope);
+    return <div data-testid="realtime-bridge">{config.scope}</div>;
+  },
 }));
 
 function createProfile(): Profile {
@@ -85,7 +112,7 @@ function createProfile(): Profile {
   };
 }
 
-function createSnapshot(role: 'admin' | 'user') {
+function createSnapshot(role: 'admin' | 'user'): GeofencingWorkspaceSnapshot {
   return {
     appliedFilters: {
       eventType: 'all' as const,
@@ -133,6 +160,18 @@ function createSnapshot(role: 'admin' | 'user') {
 }
 
 describe('GeofencingWorkspace', () => {
+  beforeEach(() => {
+    bridgeMocks.render.mockReset();
+  });
+
+  it('mounts the realtime snapshot refresh bridge once for geofencing scope', () => {
+    render(<GeofencingWorkspace profile={createProfile()} role="admin" snapshot={createSnapshot('admin')} />);
+
+    expect(screen.getAllByTestId('realtime-bridge')).toHaveLength(1);
+    expect(screen.getByTestId('realtime-bridge')).toHaveTextContent('geofencing');
+    expect(bridgeMocks.render).toHaveBeenLastCalledWith('geofencing');
+  });
+
   it('renders the read-only snapshot without preview copy or disabled CRUD affordances', () => {
     render(
         <GeofencingWorkspace

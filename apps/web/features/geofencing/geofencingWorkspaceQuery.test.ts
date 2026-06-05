@@ -8,7 +8,7 @@ import type {
   ZoneRow,
 } from '@dreyk/shared/types/database';
 
-import { parseGeofencingWorkspaceFilterInput } from './geofencingWorkspaceFilters';
+import { parseGeofencingWorkspaceFilterInput } from './services/geofencingWorkspaceFilters';
 import {
   RECENT_EVENTS_LIMIT,
   getGeofencingWorkspaceSnapshot,
@@ -135,14 +135,16 @@ const ALEXA_TRIGGER_FIXTURES = [
   },
 ];
 
-let supabaseBuilders: {
+interface SupabaseBuilders {
   alexa_triggers: MockQueryBuilder<(typeof ALEXA_TRIGGER_FIXTURES)[number]>;
   group_members: MockQueryBuilder<GroupMemberRow>;
   groups: MockQueryBuilder<GroupRow>;
   location_events: MockQueryBuilder<LocationEventRow>;
   profiles: MockQueryBuilder<ProfileRow>;
   zones: MockQueryBuilder<ZoneRow>;
-};
+}
+
+let supabaseBuilders: SupabaseBuilders;
 
 vi.mock('@/lib/supabase/server', () => ({
   createSupabaseServerClient: supabaseServerMocks.createSupabaseServerClient,
