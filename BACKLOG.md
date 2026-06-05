@@ -62,3 +62,9 @@
 - Rework candidate-user claiming in `process_tracking_points_batch()` so advisory-lock misses do not consume the effective `user_batch_limit` and starve later eligible users under cron overlap.
 - Decouple invalid `user_zone_presence` cleanup from fresh-point arrival so zone deactivation or membership loss cannot leave stale presence state that suppresses future legitimate `enter` events.
 - Treat both items above as accepted operational caveats for now, but resolve them before heavier production load or more dynamic admin/group changes.
+
+## phase-10-live-operational-updates
+
+- Add stronger runtime proof for the remaining partially verified Phase 10 spec scenarios so the realtime bridge is not relying mostly on targeted component tests.
+- Add coverage reporting for the web realtime bridge and route wiring to make future verification less manual.
+- Treat both items above as accepted verification caveats for now, but tighten them before broader rollout or more complex realtime consumers are added.
