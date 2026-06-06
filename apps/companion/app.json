@@ -7,15 +7,22 @@
       "autolinkingModuleResolution": true
     },
     "android": {
+      "package": "com.dreyk.companion",
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
         "ACCESS_BACKGROUND_LOCATION",
         "FOREGROUND_SERVICE",
-        "FOREGROUND_SERVICE_LOCATION"
+        "FOREGROUND_SERVICE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_LOCATION"
       ]
     },
     "ios": {
+      "bundleIdentifier": "com.dreyk.companion",
       "infoPlist": {
         "UIBackgroundModes": [
           "location"
@@ -23,6 +30,7 @@
       }
     },
     "plugins": [
+      "expo-dev-client",
       "expo-router",
       "expo-asset",
       [
@@ -35,6 +43,12 @@
           "locationWhenInUsePermission": "Allow Dreyk Companion to access your location while you use the app."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "74498474-5f2f-4b2b-a053-34bc2985dee9"
+      }
+    }
   }
 }
