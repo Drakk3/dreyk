@@ -1,5 +1,8 @@
 create extension if not exists pg_cron;
 
+alter table public.tracking_points
+  add column if not exists ingest_order integer not null default 0;
+
 create table public.tracking_user_cursors (
   user_id uuid primary key references public.profiles(id) on delete cascade,
   last_captured_at timestamptz not null,
