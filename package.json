@@ -13,8 +13,10 @@
     "smoke:detection-engine": "psql \"postgresql://postgres:postgres@127.0.0.1:54322/postgres\" -f \"supabase/smoke/detection_engine.sql\"",
     "smoke:ingest-location": "./supabase/smoke/ingest-location.sh",
     "smoke:tracking-points-retention": "psql \"postgresql://postgres:postgres@127.0.0.1:54322/postgres\" -f \"supabase/smoke/tracking_points_retention.sql\"",
+    "smoke:voice-integrations": "psql \"postgresql://postgres:postgres@127.0.0.1:54322/postgres\" -f \"supabase/smoke/voice_integrations.sql\"",
     "test:functions": "vitest run --config supabase/functions/vitest.config.ts",
     "typecheck": "turbo typecheck",
+    "validate:alexa-release": "node integrations/alexa/validate_release.node.mts",
     "build": "turbo build",
     "format": "prettier --check .",
     "smoke:life-plan-sql": "psql \"postgresql://postgres:postgres@127.0.0.1:54322/postgres\" -f \"supabase/smoke/life_plan_operating.sql\""

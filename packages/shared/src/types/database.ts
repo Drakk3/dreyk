@@ -18,6 +18,18 @@ export type ThemePreference =
 
 export type EventType = 'enter' | 'exit';
 
+export type AlexaLinkageStatus = 'pending' | 'linked' | 'unlinked';
+
+export type AlexaNotificationPermissionStatus = 'unknown' | 'granted' | 'denied';
+
+export type AlexaNotificationSubscriptionStatus = 'unknown' | 'subscribed' | 'unsubscribed';
+
+export type AlexaReadinessStatus = 'pending' | 'ready' | 'permission_missing' | 'unsubscribed' | 'unlinked' | 'failed';
+
+export type AlexaWorkflowKey = 'zone-enter-notification' | 'zone-exit-notification';
+
+export type AlexaDeliveryStatus = 'pending' | 'sent' | 'failed' | 'skipped';
+
 export type LifePlanCurrencyCode = 'USD';
 
 export type LifePlanFinancialConfidence = 'verified' | 'estimated' | 'needsReview';
@@ -95,8 +107,41 @@ export interface AlexaTriggerRow {
   alexa_device_id: string;
   id: string;
   is_active: boolean;
+  linked_user_id: string | null;
   message_template: string;
+  workflow_key: AlexaWorkflowKey;
   zone_id: string;
+}
+
+export interface AlexaLinkedUserRow {
+  alexa_user_reference: string;
+  created_at: string;
+  id: string;
+  last_skill_event_at: string | null;
+  linkage_status: AlexaLinkageStatus;
+  locale: string | null;
+  notification_permission_status: AlexaNotificationPermissionStatus;
+  notification_subscription_status: AlexaNotificationSubscriptionStatus;
+  profile_id: string;
+  readiness_status: AlexaReadinessStatus;
+  updated_at: string;
+}
+
+export interface AlexaDeliveryAttemptRow {
+  alexa_linked_user_id: string;
+  alexa_trigger_id: string;
+  attempt_count: number;
+  created_at: string;
+  delivered_at: string | null;
+  failure_reason: string | null;
+  id: string;
+  idempotency_key: string;
+  last_attempted_at: string | null;
+  location_event_id: string;
+  provider_message_id: string | null;
+  status: AlexaDeliveryStatus;
+  updated_at: string;
+  workflow_key: AlexaWorkflowKey;
 }
 
 export interface LocationEventRow {
@@ -346,15 +391,85 @@ export interface Database {
           alexa_device_id: string;
           id?: string;
           is_active?: boolean;
+          linked_user_id?: string | null;
           message_template: string;
+          workflow_key?: AlexaWorkflowKey;
           zone_id: string;
         };
         Update: {
           alexa_device_id?: string;
           id?: string;
           is_active?: boolean;
+          linked_user_id?: string | null;
           message_template?: string;
+          workflow_key?: AlexaWorkflowKey;
           zone_id?: string;
+        };
+        Relationships: [];
+      };
+      alexa_linked_users: {
+        Row: AlexaLinkedUserRow;
+        Insert: {
+          alexa_user_reference: string;
+          created_at?: string;
+          id?: string;
+          last_skill_event_at?: string | null;
+          linkage_status?: AlexaLinkageStatus;
+          locale?: string | null;
+          notification_permission_status?: AlexaNotificationPermissionStatus;
+          notification_subscription_status?: AlexaNotificationSubscriptionStatus;
+          profile_id: string;
+          readiness_status?: AlexaReadinessStatus;
+          updated_at?: string;
+        };
+        Update: {
+          alexa_user_reference?: string;
+          created_at?: string;
+          id?: string;
+          last_skill_event_at?: string | null;
+          linkage_status?: AlexaLinkageStatus;
+          locale?: string | null;
+          notification_permission_status?: AlexaNotificationPermissionStatus;
+          notification_subscription_status?: AlexaNotificationSubscriptionStatus;
+          profile_id?: string;
+          readiness_status?: AlexaReadinessStatus;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      alexa_delivery_attempts: {
+        Row: AlexaDeliveryAttemptRow;
+        Insert: {
+          alexa_linked_user_id: string;
+          alexa_trigger_id: string;
+          attempt_count?: number;
+          created_at?: string;
+          delivered_at?: string | null;
+          failure_reason?: string | null;
+          id?: string;
+          idempotency_key: string;
+          last_attempted_at?: string | null;
+          location_event_id: string;
+          provider_message_id?: string | null;
+          status?: AlexaDeliveryStatus;
+          updated_at?: string;
+          workflow_key: AlexaWorkflowKey;
+        };
+        Update: {
+          alexa_linked_user_id?: string;
+          alexa_trigger_id?: string;
+          attempt_count?: number;
+          created_at?: string;
+          delivered_at?: string | null;
+          failure_reason?: string | null;
+          id?: string;
+          idempotency_key?: string;
+          last_attempted_at?: string | null;
+          location_event_id?: string;
+          provider_message_id?: string | null;
+          status?: AlexaDeliveryStatus;
+          updated_at?: string;
+          workflow_key?: AlexaWorkflowKey;
         };
         Relationships: [];
       };

@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
 
 import type {
+  AlexaDeliveryAttemptRow,
+  AlexaLinkedUserRow,
   AlexaTriggerRow,
   GroupMemberRow,
   GroupRow,
@@ -25,6 +27,10 @@ export interface UserPermission extends UserPermissionRow {}
 export interface Zone extends ZoneRow {}
 
 export interface AlexaTrigger extends AlexaTriggerRow {}
+
+export interface AlexaLinkedUser extends AlexaLinkedUserRow {}
+
+export interface AlexaDeliveryAttempt extends AlexaDeliveryAttemptRow {}
 
 export interface LocationEvent extends LocationEventRow {}
 
