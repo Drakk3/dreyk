@@ -55,6 +55,11 @@
 ## engineering-debt
 
 - Fix the workspace lint blocker caused by the missing `react-hooks/exhaustive-deps` rule definition in `apps/web/components/thegridcn/progress-ring.tsx` so `npm run lint -w @dreyk/web` can pass end-to-end again.
+- Resolve the remaining pre-existing web lint failures that still block full workspace lint during Phase 11 verification:
+  - `apps/web/app/(user)/geofencing/loading.tsx`
+  - `apps/web/components/thegridcn/progress-ring.tsx`
+  - `apps/web/features/life-plan/components/ActionsSurface.tsx`
+  - `apps/web/shared/command-center/useGlobalCommandMenu.ts`
 - Run a focused cleanup pass on general TypeScript errors/debt across the web workspace, prioritizing strict typing regressions and cross-file contract drift before they affect future feature work.
 
 ## phase-9-detection-engine

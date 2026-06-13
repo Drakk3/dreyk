@@ -124,9 +124,14 @@ Build in layers. Each layer must be stable before touching the next.
 
 ## Phase 11 — Voice integrations
 
-- Implement Alexa-triggered workflows from valid events.
+- Define the final Alexa product shape as an installable Alexa skill, including supported voice workflows, permissions, locales, and account-linking expectations.
+- Create and configure the Amazon Alexa skill artifacts required for installation and testing.
+- Implement the backend delivery path from valid location events to Alexa-triggered workflows.
+- Add operational safeguards for idempotency, retries, observability, and failure handling.
+- Expose the required product configuration so admins can link zones to the intended Alexa setup.
+- Validate the install, event trigger, and release-readiness flow against Amazon platform requirements.
 
-**Exit criteria:** supported voice workflows trigger correctly from backend events.
+**Exit criteria:** an installable Alexa skill exists, the required Amazon platform configuration is in place, and supported voice workflows trigger correctly from backend events.
 
 ---
 
