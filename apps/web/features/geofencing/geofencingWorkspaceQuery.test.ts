@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type {
+  AlexaDeliveryAttemptRow,
+  AlexaLinkedUserRow,
   GroupMemberRow,
   GroupRow,
   LocationEventRow,
@@ -130,12 +132,51 @@ const ALEXA_TRIGGER_FIXTURES = [
     alexa_device_id: 'device-1',
     id: 'trigger-1',
     is_active: true,
+    linked_user_id: 'linked-user-1',
     message_template: 'Welcome home',
+    workflow_key: 'zone-enter-notification',
     zone_id: 'zone-1',
   },
 ];
 
+const ALEXA_LINKED_USER_FIXTURES: AlexaLinkedUserRow[] = [
+  {
+    alexa_user_reference: 'amzn1.account.user-1',
+    created_at: '2026-05-17T08:30:00.000Z',
+    id: 'linked-user-1',
+    last_skill_event_at: '2026-05-17T08:45:00.000Z',
+    linkage_status: 'linked',
+    locale: 'en-US',
+    notification_permission_status: 'granted',
+    notification_subscription_status: 'subscribed',
+    profile_id: 'user-1',
+    readiness_status: 'ready',
+    updated_at: '2026-05-17T08:45:00.000Z',
+  },
+];
+
+const ALEXA_DELIVERY_ATTEMPT_FIXTURES: AlexaDeliveryAttemptRow[] = [
+  {
+    alexa_linked_user_id: 'linked-user-1',
+    alexa_trigger_id: 'trigger-1',
+    attempt_count: 1,
+    created_at: '2026-05-17T12:10:00.000Z',
+    delivered_at: '2026-05-17T12:10:30.000Z',
+    failure_reason: null,
+    id: 'attempt-1',
+    idempotency_key: 'alexa:event-1:linked-user-1:zone-enter-notification',
+    last_attempted_at: '2026-05-17T12:10:00.000Z',
+    location_event_id: 'event-1',
+    provider_message_id: 'provider-1',
+    status: 'sent',
+    updated_at: '2026-05-17T12:10:30.000Z',
+    workflow_key: 'zone-enter-notification',
+  },
+];
+
 interface SupabaseBuilders {
+  alexa_delivery_attempts: MockQueryBuilder<AlexaDeliveryAttemptRow>;
+  alexa_linked_users: MockQueryBuilder<AlexaLinkedUserRow>;
   alexa_triggers: MockQueryBuilder<(typeof ALEXA_TRIGGER_FIXTURES)[number]>;
   group_members: MockQueryBuilder<GroupMemberRow>;
   groups: MockQueryBuilder<GroupRow>;
@@ -152,6 +193,8 @@ vi.mock('@/lib/supabase/server', () => ({
 
 beforeEach(() => {
   supabaseBuilders = {
+    alexa_delivery_attempts: new MockQueryBuilder({ data: ALEXA_DELIVERY_ATTEMPT_FIXTURES, error: null }),
+    alexa_linked_users: new MockQueryBuilder({ data: ALEXA_LINKED_USER_FIXTURES, error: null }),
     alexa_triggers: new MockQueryBuilder({ data: ALEXA_TRIGGER_FIXTURES, error: null }),
     group_members: new MockQueryBuilder({ data: GROUP_MEMBER_FIXTURES, error: null }),
     groups: new MockQueryBuilder({ data: GROUP_FIXTURES, error: null }),
@@ -252,5 +295,12 @@ describe('getGeofencingWorkspaceSnapshot', () => {
         { column: 'event_type', kind: 'eq', value: 'enter' },
       ]),
     );
+    expect(supabaseBuilders.alexa_linked_users.calls).toEqual(
+      expect.arrayContaining([{ column: 'id', kind: 'in', value: ['linked-user-1'] }]),
+    );
+    expect(supabaseBuilders.alexa_delivery_attempts.calls).toEqual(
+      expect.arrayContaining([{ column: 'alexa_trigger_id', kind: 'in', value: ['trigger-1'] }]),
+    );
+    expect(snapshot.zones[0]?.alexa.statusLabel).toBe('Ready');
   });
 });

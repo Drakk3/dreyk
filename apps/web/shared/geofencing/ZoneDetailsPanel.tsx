@@ -28,6 +28,7 @@ export function ZoneDetailsPanel({ selectedZone }: ZoneDetailsPanelProps): JSX.E
 
   return (
     <DataCard
+      status={selectedZone.alexa.state === 'failed' ? 'alert' : selectedZone.alexa.state === 'ready' ? 'active' : 'inactive'}
       title={selectedZone.name}
       subtitle="Selected zone"
       fields={[
@@ -36,7 +37,12 @@ export function ZoneDetailsPanel({ selectedZone }: ZoneDetailsPanelProps): JSX.E
         { label: 'Radius', value: `${selectedZone.radiusMeters} meters` },
         { label: 'Latitude', value: formatCoordinate(selectedZone.latitude) },
         { label: 'Longitude', value: formatCoordinate(selectedZone.longitude) },
-        { label: 'Alexa trigger', value: selectedZone.hasAlexaTrigger ? 'Linked' : 'Not linked' },
+        {
+          label: 'Alexa readiness',
+          value: selectedZone.alexa.statusLabel,
+          highlight: selectedZone.alexa.state === 'ready',
+        },
+        { label: 'Alexa next action', value: selectedZone.alexa.nextAction },
         { label: 'Recent events', value: `${selectedZone.recentEventCount}` },
       ]}
     />

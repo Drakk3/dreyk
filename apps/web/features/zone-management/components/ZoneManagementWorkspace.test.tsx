@@ -64,6 +64,10 @@ vi.mock('./ZoneManagementForm', () => ({
   ZoneManagementForm: () => <div>Zone form</div>,
 }));
 
+vi.mock('./ZoneVoiceConfigurationPanel', () => ({
+  ZoneVoiceConfigurationPanel: () => <div>Voice config</div>,
+}));
+
 vi.mock('./ZoneDeleteConfirmation', () => ({
   ZoneDeleteConfirmation: () => <div>Delete confirmation</div>,
 }));

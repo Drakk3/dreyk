@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import type {
+  AlexaDeliveryAttemptRow,
+  AlexaLinkedUserRow,
   AlexaTriggerRow,
   GroupRow,
   LocationEventRow,
@@ -71,12 +73,16 @@ describe('mapGeofencingWorkspaceSnapshot', () => {
         isAdminFilterable: true,
         userId: 'user-1',
       },
+      alexaDeliveryAttempts: [],
+      alexaLinkedUsers: [],
       alexaTriggers: [
         {
           alexa_device_id: 'device-1',
           id: 'trigger-1',
           is_active: true,
+          linked_user_id: null,
           message_template: 'Welcome home',
+          workflow_key: 'zone-enter-notification',
           zone_id: 'zone-a',
         } satisfies AlexaTriggerRow,
       ],
@@ -120,6 +126,9 @@ describe('mapGeofencingWorkspaceSnapshot', () => {
     expect(snapshot.selectedZoneId).toBe('zone-a');
     expect(snapshot.zones.map((zone) => zone.name)).toEqual(['Alpha', 'Bravo']);
     expect(snapshot.zones[0]).toMatchObject({
+      alexa: {
+        statusLabel: 'Linked user required',
+      },
       groupName: 'North Squad',
       hasAlexaTrigger: true,
       recentEventCount: 1,
@@ -138,6 +147,8 @@ describe('mapGeofencingWorkspaceSnapshot', () => {
         isAdminFilterable: false,
         userId: null,
       },
+      alexaDeliveryAttempts: [],
+      alexaLinkedUsers: [],
       alexaTriggers: [],
       eventProfiles: [],
       filterOptions: {
@@ -164,6 +175,8 @@ describe('mapGeofencingWorkspaceSnapshot', () => {
         isAdminFilterable: false,
         userId: null,
       },
+      alexaDeliveryAttempts: [],
+      alexaLinkedUsers: [],
       alexaTriggers: [],
       eventProfiles: [],
       filterOptions: {
@@ -190,12 +203,47 @@ describe('mapGeofencingWorkspaceSnapshot', () => {
         isAdminFilterable: true,
         userId: null,
       },
+      alexaDeliveryAttempts: [
+        {
+          alexa_linked_user_id: 'linked-user-1',
+          alexa_trigger_id: 'trigger-1',
+          attempt_count: 1,
+          created_at: '2026-05-17T12:10:00.000Z',
+          delivered_at: null,
+          failure_reason: 'Amazon timeout',
+          id: 'attempt-1',
+          idempotency_key: 'alexa:event-1:linked-user-1:zone-enter-notification',
+          last_attempted_at: '2026-05-17T12:10:00.000Z',
+          location_event_id: 'event-1',
+          provider_message_id: null,
+          status: 'failed',
+          updated_at: '2026-05-17T12:10:00.000Z',
+          workflow_key: 'zone-enter-notification',
+        } satisfies AlexaDeliveryAttemptRow,
+      ],
+      alexaLinkedUsers: [
+        {
+          alexa_user_reference: 'amzn1.user.1',
+          created_at: '2026-05-17T08:00:00.000Z',
+          id: 'linked-user-1',
+          last_skill_event_at: '2026-05-17T08:30:00.000Z',
+          linkage_status: 'linked',
+          locale: 'en-US',
+          notification_permission_status: 'granted',
+          notification_subscription_status: 'subscribed',
+          profile_id: 'user-1',
+          readiness_status: 'ready',
+          updated_at: '2026-05-17T08:30:00.000Z',
+        } satisfies AlexaLinkedUserRow,
+      ],
       alexaTriggers: [
         {
           alexa_device_id: 'device-1',
           id: 'trigger-1',
           is_active: true,
+          linked_user_id: 'linked-user-1',
           message_template: 'Welcome home',
+          workflow_key: 'zone-enter-notification',
           zone_id: 'zone-a',
         } satisfies AlexaTriggerRow,
       ],
@@ -242,6 +290,7 @@ describe('mapGeofencingWorkspaceSnapshot', () => {
     });
 
     expect(snapshot.zones[0]?.recentEventCount).toBe(2);
+    expect(snapshot.zones[0]?.alexa.state).toBe('failed');
     expect(snapshot.recentEvents.map((event) => event.id)).toEqual(['event-1', 'event-2']);
   });
 });

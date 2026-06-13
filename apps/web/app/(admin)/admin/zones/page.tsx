@@ -1,5 +1,5 @@
 import { ZoneManagementWorkspace } from '@/features/zone-management/components/ZoneManagementWorkspace';
-import { getZoneManagementSnapshot } from '@/features/zone-management/services/zoneManagementQuery';
+import { getZoneManagementSnapshot } from '@/features/zone-management/zoneManagementQuery';
 import { requireAdminUser, type AuthUserContext } from '@/lib/auth/authContext';
 import { handleError } from '@/shared/lib/errors';
 

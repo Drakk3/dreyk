@@ -11,6 +11,7 @@ import type { ZoneManagementSnapshot } from '../types';
 import { ZoneDeleteConfirmation } from './ZoneDeleteConfirmation';
 import { ZoneManagementForm } from './ZoneManagementForm';
 import { ZoneManagementList } from './ZoneManagementList';
+import { ZoneVoiceConfigurationPanel } from './ZoneVoiceConfigurationPanel';
 
 interface ZoneManagementWorkspaceProps {
   adminDisplayName: string;
@@ -94,6 +95,7 @@ export function ZoneManagementWorkspace({ adminDisplayName, adminUserId, snapsho
             selectedZoneId={selectedZoneId}
             validationErrors={validationErrors}
           />
+          <ZoneVoiceConfigurationPanel selectedZone={selectedZone} />
         </div>
       </section>
     </main>

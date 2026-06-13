@@ -9,12 +9,24 @@ const navigationMocks = vi.hoisted(() => ({
   refresh: vi.fn<() => void>(),
 }));
 
+interface MutationEqResult {
+  error: Error | null;
+}
+
+interface UpdateResult {
+  eq: () => Promise<MutationEqResult>;
+}
+
+interface RemoveResult {
+  eq: () => Promise<MutationEqResult>;
+}
+
 const browserMocks = vi.hoisted(() => {
   const insert = vi.fn<() => Promise<{ error: Error | null }>>();
   const updateEq = vi.fn<() => Promise<{ error: Error | null }>>();
-  const update = vi.fn(() => ({ eq: updateEq }));
+  const update = vi.fn<() => UpdateResult>(() => ({ eq: updateEq }));
   const deleteEq = vi.fn<() => Promise<{ error: Error | null }>>();
-  const remove = vi.fn(() => ({ eq: deleteEq }));
+  const remove = vi.fn<() => RemoveResult>(() => ({ eq: deleteEq }));
 
   return {
     deleteEq,
@@ -56,6 +68,25 @@ function createSnapshot(): ZoneManagementSnapshot {
     selectedZoneId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
     zones: [
       {
+        alexa: {
+          lastAttemptedAt: null,
+          lastDeliveryStatus: null,
+          lastFailureReason: null,
+          linkedProfileId: null,
+          linkedUserId: null,
+          linkedUserReference: null,
+          linkageStatus: null,
+          messageTemplate: null,
+          nextAction: 'Create an Alexa trigger for this zone before treating it as voice-ready.',
+          notificationPermissionStatus: null,
+          notificationSubscriptionStatus: null,
+          readinessStatus: null,
+          state: 'incomplete',
+          statusLabel: 'Not configured',
+          triggerId: null,
+          isTriggerActive: false,
+          workflowKey: null,
+        },
         createdAt: '2026-05-18T09:00:00.000Z',
         groupId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
         groupName: 'Alpha',

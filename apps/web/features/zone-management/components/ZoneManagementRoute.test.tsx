@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import AdminZonesPage from '@/app/(admin)/admin/zones/page';
-import { getZoneManagementSnapshot } from '@/features/zone-management/services/zoneManagementQuery';
+import { getZoneManagementSnapshot } from '@/features/zone-management/zoneManagementQuery';
 
 const authMocks = vi.hoisted(() => ({
   requireAdminUser: vi.fn(),
@@ -12,7 +12,7 @@ vi.mock('@/lib/auth/authContext', () => ({
   requireAdminUser: authMocks.requireAdminUser,
 }));
 
-vi.mock('@/features/zone-management/services/zoneManagementQuery', () => ({
+vi.mock('@/features/zone-management/zoneManagementQuery', () => ({
   getZoneManagementSnapshot: vi.fn(),
 }));
 

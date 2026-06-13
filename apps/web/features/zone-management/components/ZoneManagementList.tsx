@@ -40,6 +40,9 @@ export function ZoneManagementList({ onCreateZone, onSelectZone, selectedZoneId,
                   <div className="mt-1 text-xs uppercase tracking-[0.08em] text-muted-foreground">
                     {zone.groupName ?? 'Unavailable group'} · {zone.radiusMeters}m
                   </div>
+                  <div className="mt-2 text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                    Alexa · {zone.alexa.statusLabel}
+                  </div>
                 </div>
                 <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-foreground/55">
                   {zone.isActive ? 'Active' : 'Inactive'}

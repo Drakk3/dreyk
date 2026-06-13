@@ -6,6 +6,8 @@ import type {
 } from './types';
 
 import type {
+  AlexaDeliveryAttemptRow,
+  AlexaLinkedUserRow,
   AlexaTriggerRow,
   GroupMemberRow,
   GroupRow,
@@ -131,6 +133,10 @@ function createQueryError(message: string, cause: unknown): AppError {
   return new AppError(message, 'geofencingWorkspaceQuery', cause);
 }
 
+function createEmptyResult<TRow>(): { data: TRow[]; error: null } {
+  return { data: [], error: null };
+}
+
 export async function getGeofencingWorkspaceSnapshot({ filters, role, userId }: GetGeofencingWorkspaceSnapshotParams): Promise<GeofencingWorkspaceSnapshot> {
   try {
     const supabase = createSupabaseServerClient();
@@ -176,10 +182,10 @@ export async function getGeofencingWorkspaceSnapshot({ filters, role, userId }: 
 
     const [alexaTriggersResult, memberProfilesResult, recentEventsResult] = await Promise.all([
       filteredZoneIds.length === 0
-        ? Promise.resolve({ data: [], error: null })
+        ? Promise.resolve(createEmptyResult<AlexaTriggerRow>())
         : supabase.from('alexa_triggers').select('*').in('zone_id', filteredZoneIds),
       role !== 'admin' || groupMembers.length === 0
-        ? Promise.resolve({ data: [], error: null })
+        ? Promise.resolve(createEmptyResult<ProfileRow>())
         : supabase
             .from('profiles')
             .select('*')
@@ -188,7 +194,7 @@ export async function getGeofencingWorkspaceSnapshot({ filters, role, userId }: 
               Array.from(new Set(groupMembers.map((groupMember) => groupMember.user_id))),
             ),
       filteredZoneIds.length === 0 && appliedFilters.groupId !== null
-        ? Promise.resolve({ data: [], error: null })
+        ? Promise.resolve(createEmptyResult<LocationEventRow>())
         : (() => {
             let query = supabase
               .from('location_events')
@@ -238,12 +244,37 @@ export async function getGeofencingWorkspaceSnapshot({ filters, role, userId }: 
     }
 
     const alexaTriggers: AlexaTriggerRow[] = alexaTriggersResult.data ?? [];
+    const linkedUserIds = Array.from(
+      new Set(alexaTriggers.map((trigger) => trigger.linked_user_id).filter((linkedUserId): linkedUserId is string => linkedUserId !== null)),
+    );
+    const triggerIds = alexaTriggers.map((trigger) => trigger.id);
+    const [alexaLinkedUsersResult, alexaDeliveryAttemptsResult] = await Promise.all([
+      linkedUserIds.length === 0
+        ? Promise.resolve(createEmptyResult<AlexaLinkedUserRow>())
+        : supabase.from('alexa_linked_users').select('*').in('id', linkedUserIds),
+      triggerIds.length === 0
+        ? Promise.resolve(createEmptyResult<AlexaDeliveryAttemptRow>())
+        : supabase.from('alexa_delivery_attempts').select('*').in('alexa_trigger_id', triggerIds),
+    ]);
+
+    if (alexaLinkedUsersResult.error !== null) {
+      throw createQueryError('Unable to load Alexa linked-user readiness for the geofencing workspace.', alexaLinkedUsersResult.error);
+    }
+
+    if (alexaDeliveryAttemptsResult.error !== null) {
+      throw createQueryError('Unable to load Alexa delivery attempts for the geofencing workspace.', alexaDeliveryAttemptsResult.error);
+    }
+
+    const alexaLinkedUsers: AlexaLinkedUserRow[] = alexaLinkedUsersResult.data ?? [];
+    const alexaDeliveryAttempts: AlexaDeliveryAttemptRow[] = alexaDeliveryAttemptsResult.data ?? [];
     const memberProfiles: ProfileRow[] = memberProfilesResult.data ?? [];
     const eventProfiles: ProfileRow[] = eventProfilesResult.data ?? [];
     const filterOptions = createGeofencingWorkspaceFilterOptions(appliedFilters, groups, groupMembers, memberProfiles);
 
     return mapGeofencingWorkspaceSnapshot({
       appliedFilters,
+      alexaDeliveryAttempts,
+      alexaLinkedUsers,
       alexaTriggers,
       eventProfiles,
       filterOptions,

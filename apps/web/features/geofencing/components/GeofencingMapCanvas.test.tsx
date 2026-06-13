@@ -3,6 +3,8 @@ import type { ReactNode } from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+import type { GeofencingWorkspaceRecentEvent, GeofencingWorkspaceZone } from '../types';
+
 import { GeofencingMapCanvas } from './GeofencingMapCanvas';
 
 interface MockGeoJsonSource {
@@ -78,8 +80,27 @@ vi.mock('@/shared/lib/errors', () => ({
   handleError: mapMocks.handleError,
 }));
 
-function createZone() {
+function createZone(): GeofencingWorkspaceZone {
   return {
+    alexa: {
+      lastAttemptedAt: null,
+      lastDeliveryStatus: null,
+      lastFailureReason: null,
+      linkedProfileId: null,
+      linkedUserId: null,
+      linkedUserReference: null,
+      linkageStatus: null,
+      messageTemplate: 'Welcome home',
+      nextAction: 'Assign a persisted Alexa linked user to this trigger.',
+      notificationPermissionStatus: null,
+      notificationSubscriptionStatus: null,
+      readinessStatus: null,
+      state: 'incomplete' as const,
+      statusLabel: 'Linked user required',
+      triggerId: 'trigger-1',
+      isTriggerActive: true,
+      workflowKey: 'zone-enter-notification' as const,
+    },
     createdAt: '2026-05-17T10:00:00.000Z',
     groupId: 'group-1',
     groupName: 'Alpha',
@@ -94,7 +115,7 @@ function createZone() {
   };
 }
 
-function createEvent() {
+function createEvent(): GeofencingWorkspaceRecentEvent {
   return {
     distanceMeters: 18,
     eventType: 'enter' as const,

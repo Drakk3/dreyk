@@ -1,4 +1,6 @@
 import type {
+  AlexaDeliveryAttemptRow,
+  AlexaLinkedUserRow,
   AlexaTriggerRow,
   GroupRow,
   LocationEventRow,
@@ -19,6 +21,8 @@ import { createSharedGeofencingZoneViews } from '@/shared/geofencing/geofencingZ
 
 export interface GeofencingWorkspaceQueryResult {
   appliedFilters: GeofencingWorkspaceAppliedFilters;
+  alexaDeliveryAttempts: AlexaDeliveryAttemptRow[];
+  alexaLinkedUsers: AlexaLinkedUserRow[];
   alexaTriggers: AlexaTriggerRow[];
   eventProfiles: ProfileRow[];
   filterOptions: GeofencingWorkspaceFilterOptions;
@@ -35,6 +39,8 @@ function createProfileByIdMap(eventProfiles: ProfileRow[]): Map<string, ProfileR
 
 function mapZoneViews(result: GeofencingWorkspaceQueryResult): GeofencingZoneView[] {
   return createSharedGeofencingZoneViews({
+    alexaDeliveryAttempts: result.alexaDeliveryAttempts,
+    alexaLinkedUsers: result.alexaLinkedUsers,
     alexaTriggers: result.alexaTriggers,
     groups: result.groups,
     recentEvents: result.recentEvents,
