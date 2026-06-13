@@ -13,6 +13,11 @@
     },
     "build": {
       "dependsOn": ["^build"],
+      "env": [
+        "ALEXA_ACCOUNT_LINKING_CLIENT_ID",
+        "ALEXA_ACCOUNT_LINKING_CLIENT_SECRET",
+        "ALEXA_ACCOUNT_LINKING_TOKEN_SECRET"
+      ],
       "outputs": ["dist/**", ".next/**"]
     }
   }

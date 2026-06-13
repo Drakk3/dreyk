@@ -13,7 +13,7 @@ import { createSignedAlexaToken } from '@/lib/alexa/accountLinking';
 import {
   createAlexaAccountLinkingTokenHandler,
   type AlexaTokenEligibilityClient,
-} from './route';
+} from './handler';
 
 vi.mock('@/shared/lib/errors', () => ({
   handleError: routeMocks.handleError,
@@ -75,17 +75,17 @@ interface MockProfileEligibilityResult {
 
 function createEligibilityClientMock(input: CreateEligibilityClientMockInput): AlexaTokenEligibilityClient {
   return {
-    async getLinkedUserEligibility(): Promise<MockLinkedUserEligibilityResult> {
-      return {
+    getLinkedUserEligibility(): Promise<MockLinkedUserEligibilityResult> {
+      return Promise.resolve({
         errorMessage: input.linkedUserErrorMessage ?? null,
         row: input.linkedUserRow,
-      };
+      });
     },
-    async getProfileEligibility(): Promise<MockProfileEligibilityResult> {
-      return {
+    getProfileEligibility(): Promise<MockProfileEligibilityResult> {
+      return Promise.resolve({
         errorMessage: input.profileErrorMessage ?? null,
         row: input.profileRow,
-      };
+      });
     },
   };
 }

@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { GeofencingWorkspaceRecentEvent, GeofencingWorkspaceZone } from '../types';
+import type { GeofencingEventView, GeofencingZoneView } from '../types';
 
 import { GeofencingMapCanvas } from './GeofencingMapCanvas';
 
@@ -29,7 +29,7 @@ const mapMocks = vi.hoisted(() => {
   const fitMapBounds = vi.fn();
   const handleError = vi.fn();
 
-  function createMockMap(shouldFailSetup = false): MockMap {
+  function createMockMap(isSetupFailing = false): MockMap {
     const sources = new Map<string, MockGeoJsonSource>();
     const layers = new Set<string>();
     const canvas = { style: { cursor: '' } };
@@ -39,7 +39,7 @@ const mapMocks = vi.hoisted(() => {
         layers.add(layer.id);
       }),
       addSource: vi.fn((sourceId: string) => {
-        if (shouldFailSetup) {
+        if (isSetupFailing) {
           throw new Error('style load failed');
         }
 
@@ -80,7 +80,7 @@ vi.mock('@/shared/lib/errors', () => ({
   handleError: mapMocks.handleError,
 }));
 
-function createZone(): GeofencingWorkspaceZone {
+function createZone(): GeofencingZoneView {
   return {
     alexa: {
       lastAttemptedAt: null,
@@ -115,7 +115,7 @@ function createZone(): GeofencingWorkspaceZone {
   };
 }
 
-function createEvent(): GeofencingWorkspaceRecentEvent {
+function createEvent(): GeofencingEventView {
   return {
     distanceMeters: 18,
     eventType: 'enter' as const,
