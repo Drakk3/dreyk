@@ -1,0 +1,46 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "dreyk alerts",
+      "intents": [
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.FallbackIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": []
+        },
+        {
+          "name": "ReadinessStatusIntent",
+          "samples": [
+            "are my notifications ready",
+            "is my Dreyk account ready",
+            "check my alert readiness",
+            "what do I still need to enable",
+            "am I ready for zone alerts"
+          ]
+        },
+        {
+          "name": "NotificationHelpIntent",
+          "samples": [
+            "how do I enable notifications",
+            "how do I link my account",
+            "what can this skill do",
+            "help me finish setup",
+            "how does Dreyk alert me"
+          ]
+        }
+      ],
+      "types": []
+    }
+  }
+}

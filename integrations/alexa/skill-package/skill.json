@@ -1,0 +1,88 @@
+{
+  "manifest": {
+    "manifestVersion": "1.0",
+    "publishingInformation": {
+      "locales": {
+        "en-US": {
+          "name": "Dreyk",
+          "summary": "Backend-driven Alexa zone alerts for Dreyk.",
+          "description": "Dreyk sends Alexa notifications for supported zone enter and zone exit workflows after your Dreyk account is linked and notifications are enabled.",
+          "examplePhrases": [
+            "Alexa, open Dreyk",
+            "Alexa, ask Dreyk if my alerts are ready",
+            "Alexa, ask Dreyk what I still need to enable"
+          ],
+          "keywords": [
+            "dreyk",
+            "geofencing",
+            "alerts",
+            "notifications"
+          ],
+          "smallIconUri": "file://assets/images/en-US_smallIcon.png",
+          "largeIconUri": "file://assets/images/en-US_largeIcon.png"
+        }
+      },
+      "isAvailableWorldwide": false,
+      "distributionCountries": [
+        "US"
+      ],
+      "testingInstructions": "Enable the development skill, complete Dreyk account linking, grant Alexa notifications, and verify the skill reports readiness before testing zone-triggered Proactive Events.",
+      "category": "PRODUCTIVITY"
+    },
+    "apis": {
+      "custom": {
+        "endpoint": {
+          "uri": "https://dreyk.functions.supabase.co/alexa-skill-runtime",
+          "sslCertificateType": "Trusted"
+        },
+        "interfaces": []
+      }
+    },
+    "events": {
+      "publications": [
+        {
+          "eventName": "AMAZON.MessageAlert.Activated"
+        },
+        {
+          "eventName": "AMAZON.MessageAlert.Updated"
+        }
+      ],
+      "endpoint": {
+        "uri": "https://dreyk.functions.supabase.co/alexa-skill-webhook",
+        "sslCertificateType": "Trusted"
+      }
+    },
+    "permissions": [
+      {
+        "name": "alexa::devices:all:notifications:write"
+      }
+    ],
+    "accountLinking": {
+      "type": "AUTH_CODE",
+      "skipOnEnablement": false,
+      "authorizationUrl": "https://app.dreyk.com/api/alexa/account-linking/authorize",
+      "accessTokenUrl": "https://app.dreyk.com/api/alexa/account-linking/token",
+      "clientId": "dreyk-alexa-account-linking",
+      "clientSecret": "ALEXA_ACCOUNT_LINKING_CLIENT_SECRET_FROM_SECRET_STORE",
+      "accessTokenScheme": "HTTP_BASIC",
+      "defaultTokenExpirationInSeconds": 3600,
+      "scopes": [
+        "profile",
+        "voice_integrations:write"
+      ]
+    },
+    "privacyAndCompliance": {
+      "allowsPurchases": false,
+      "usesPersonalInfo": true,
+      "isChildDirected": false,
+      "isExportCompliant": true,
+      "containsAds": false,
+      "locales": {
+        "en-US": {
+          "privacyPolicyUrl": "https://app.dreyk.com/legal/privacy",
+          "termsOfUseUrl": "https://app.dreyk.com/legal/terms"
+        }
+      }
+    }
+  }
+}

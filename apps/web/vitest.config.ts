@@ -12,7 +12,14 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
-    include: ['features/**/*.test.ts', 'features/**/*.test.tsx', 'shared/**/*.test.ts', 'shared/**/*.test.tsx'],
+    include: [
+      'app/**/*.test.ts',
+      'features/**/*.test.ts',
+      'features/**/*.test.tsx',
+      'lib/**/*.test.ts',
+      'shared/**/*.test.ts',
+      'shared/**/*.test.tsx',
+    ],
     setupFiles: ['./vitest.setup.ts'],
   },
 });
